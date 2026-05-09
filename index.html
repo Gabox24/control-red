@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gabo - Monitor de Red</title>
+    <style>
+        :root {
+            --bg: #0d1117;
+            --card: #161b22;
+            --border: #30363d;
+            --blue: #58a6ff;
+            --green: #39d353;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: #c9d1d9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .card {
+            background-color: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            min-width: 350px;
+        }
+        .status-badge {
+            display: inline-block;
+            background-color: rgba(57, 211, 83, 0.1);
+            color: var(--green);
+            border: 1px solid var(--green);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        h1 { margin: 10px 0; color: white; font-size: 24px; }
+        .ip-display {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 42px;
+            color: var(--blue);
+            margin: 25px 0;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(88, 166, 255, 0.3);
+        }
+        .footer {
+            color: #8b949e;
+            font-size: 14px;
+            margin-top: 20px;
+        }
+        #update-timer { font-size: 11px; color: #484f58; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <div class="status-badge">SISTEMA ACTIVO</div>
+        <h1 id="pc-name">Cargando...</h1>
+        <div class="ip-display" id="ip-address">0.0.0.0</div>
+        <div class="footer">
+            Último reporte: <span id="timestamp">--/--/-- --:--:--</span>
+        </div>
+        <div id="update-timer">La página se refresca cada 30 segundos</div>
+    </div>
+
+    <script>
+        async function fetchDeviceData() {
+            try {
+                // El parámetro ?t= hace que el navegador no use cache y lea el dato real siempre
+                const response = await fetch('datos.json?t=' + new Date().getTime());
+                if (!response.ok) throw new Error("No hay datos aún");
+                
+                const data = await response.json();
+                
+                document.getElementById('pc-name').innerText = data.pc;
+                document.getElementById('ip-address').innerText = data.ip;
+                document.getElementById('timestamp').innerText = data.fecha;
+                
+                console.log("Datos actualizados correctamente");
+            } catch (error) {
+                console.log("Esperando por el primer reporte de Linux...");
+                document.getElementById('pc-name').innerText = "Esperando señal...";
+            }
+        }
+
+        // Ejecutar al cargar la página
+        fetchDeviceData();
+
+        // Repetir cada 30 segundos
+        setInterval(fetchDeviceData, 30000);
+    </script>
+</body>
+</html>
