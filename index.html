@@ -2,100 +2,52 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gabo - Monitor de Red</title>
+    <title>Gabo - Panel Multi-Equipo</title>
     <style>
-        :root {
-            --bg: #0d1117;
-            --card: #161b22;
-            --border: #30363d;
-            --blue: #58a6ff;
-            --green: #39d353;
-        }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg);
-            color: #c9d1d9;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-        .card {
-            background-color: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 40px;
-            text-align: center;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-            min-width: 350px;
-        }
-        .status-badge {
-            display: inline-block;
-            background-color: rgba(57, 211, 83, 0.1);
-            color: var(--green);
-            border: 1px solid var(--green);
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
-            margin-bottom: 20px;
-        }
-        h1 { margin: 10px 0; color: white; font-size: 24px; }
-        .ip-display {
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 42px;
-            color: var(--blue);
-            margin: 25px 0;
-            font-weight: bold;
-            text-shadow: 0 0 10px rgba(88, 166, 255, 0.3);
-        }
-        .footer {
-            color: #8b949e;
-            font-size: 14px;
-            margin-top: 20px;
-        }
-        #update-timer { font-size: 11px; color: #484f58; margin-top: 10px; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0d1117; color: white; padding: 30px; }
+        h1 { text-align: center; color: #58a6ff; margin-bottom: 40px; }
+        #panel { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
+        .card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 25px; width: 300px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
+        .name { font-size: 1.3em; color: #f0f6fc; border-bottom: 1px solid #30363d; padding-bottom: 10px; margin-bottom: 15px; text-transform: uppercase; }
+        .ip { font-family: 'Consolas', monospace; font-size: 2.2em; color: #39d353; font-weight: bold; margin: 10px 0; }
+        .time { font-size: 0.85em; color: #8b949e; }
     </style>
 </head>
 <body>
-
-    <div class="card">
-        <div class="status-badge">SISTEMA ACTIVO</div>
-        <h1 id="pc-name">Cargando...</h1>
-        <div class="ip-display" id="ip-address">0.0.0.0</div>
-        <div class="footer">
-            Último reporte: <span id="timestamp">--/--/-- --:--:--</span>
-        </div>
-        <div id="update-timer">La página se refresca cada 30 segundos</div>
-    </div>
+    <h1>Equipos de Tesis Conectados</h1>
+    <div id="panel">Buscando reportes...</div>
 
     <script>
-        async function fetchDeviceData() {
+        async function actualizarPanel() {
             try {
-                // El parámetro ?t= hace que el navegador no use cache y lea el dato real siempre
-                const response = await fetch('datos.json?t=' + new Date().getTime());
-                if (!response.ok) throw new Error("No hay datos aún");
+                // Leer la lista de archivos del repositorio de Gabox24
+                const res = await fetch('https://api.github.org/repos/Gabox24/control-red/contents/');
+                const archivos = await res.json();
                 
-                const data = await response.json();
-                
-                document.getElementById('pc-name').innerText = data.pc;
-                document.getElementById('ip-address').innerText = data.ip;
-                document.getElementById('timestamp').innerText = data.fecha;
-                
-                console.log("Datos actualizados correctamente");
-            } catch (error) {
-                console.log("Esperando por el primer reporte de Linux...");
-                document.getElementById('pc-name').innerText = "Esperando señal...";
-            }
+                const panel = document.getElementById('panel');
+                panel.innerHTML = ""; // Limpiar antes de refrescar
+
+                // Filtrar archivos que representan a una PC (ej: pc_gabo.json)
+                const reportes = archivos.filter(f => f.name.startsWith('pc_') && f.name.endsWith('.json'));
+
+                for (let file of reportes) {
+                    const dataRes = await fetch(file.download_url + '?t=' + new Date().getTime());
+                    const data = await dataRes.json();
+
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.innerHTML = `
+                        <div class="name">🖥️ ${data.pc}</div>
+                        <div class="ip">${data.ip}</div>
+                        <div class="time">Último reporte: ${data.fecha}</div>
+                    `;
+                    panel.appendChild(card);
+                }
+            } catch (err) { console.error("Error cargando datos:", err); }
         }
 
-        // Ejecutar al cargar la página
-        fetchDeviceData();
-
-        // Repetir cada 30 segundos
-        setInterval(fetchDeviceData, 30000);
+        actualizarPanel();
+        setInterval(actualizarPanel, 60000); // Refrescar cada minuto
     </script>
 </body>
 </html>
