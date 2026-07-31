@@ -2,22 +2,15 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <!-- Se inhabilita el zoom del usuario para fijar la interfaz -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Generador de Registro Múltiple OCR</title>
-  <!-- CDN de Tesseract.js -->
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+  <title>Registro de Entrega DAKA</title>
   <style>
-    /* Deshabilitar selección de texto global y zoom táctil accidental */
     * { 
       box-sizing: border-box; 
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       touch-action: manipulation;
-      -webkit-user-select: none;
-      user-select: none;
     }
     
-    /* Permitir selección únicamente en inputs y vista previa */
     input, textarea, .preview {
       -webkit-user-select: text;
       user-select: text;
@@ -34,7 +27,6 @@
       overflow-x: hidden;
     }
 
-    /* Tarjeta con ancho fijo máximo y responsive sin desbordamiento */
     .card { 
       background: white; 
       padding: 18px; 
@@ -44,7 +36,7 @@
       box-shadow: 0 4px 15px rgba(0,0,0,0.08); 
     }
 
-    h2, h3 { color: #075e54; margin-top: 0; text-align: center; font-size: 20px; }
+    h2 { color: #075e54; margin-top: 0; text-align: center; font-size: 20px; }
     label { font-weight: 600; font-size: 13px; margin-top: 10px; display: block; color: #444; }
     
     input, textarea { 
@@ -55,14 +47,10 @@
       border-radius: 8px; 
       font-size: 14px;
       outline: none;
-      transition: border-color 0.2s;
     }
 
-    input:focus {
-      border-color: #075e54;
-    }
+    input:focus { border-color: #075e54; }
     
-    /* Zona de carga de imágenes compacta */
     .ocr-box { 
       background: #eef5f3; 
       border: 2px dashed #075e54; 
@@ -83,7 +71,7 @@
       font-size: 14px;
       margin-top: 4px; 
     }
-    #status { font-size: 12px; color: #555; margin-top: 6px; font-style: italic; }
+    #status { font-size: 12px; color: #075e54; margin-top: 6px; font-weight: 600; word-break: break-word; }
 
     .btn-group { display: flex; gap: 8px; margin-top: 12px; }
     button { 
@@ -95,9 +83,7 @@
       font-size: 14px; 
       font-weight: bold; 
       cursor: pointer; 
-      transition: opacity 0.2s;
     }
-    button:active { opacity: 0.8; }
     .btn-copy { background-color: #075e54; }
     .btn-wa { background-color: #25d366; }
     .btn-clear { background-color: #d9534f; margin-top: 8px; }
@@ -122,29 +108,35 @@
 <body>
 
 <div class="card">
-  <h2>📋 Registro de Entrega</h2>
+  <h2>📋 Registro de Entrega DAKA</h2>
 
-  <!-- Escáner OCR Optimizado -->
+  <!-- Escáner por IA -->
   <div class="ocr-box">
-    <p style="font-size: 13px; font-weight: bold; margin: 0 0 4px 0; color: #075e54;">📸 Escanear Múltiples Fotos</p>
+    <p style="font-size: 13px; font-weight: bold; margin: 0 0 4px 0; color: #075e54;">🤖 Escanear Etiqueta / Documento DAKA</p>
     <label for="imageInput" class="btn-file">📷 Tomar / Seleccionar Fotos</label>
-    <input type="file" id="imageInput" accept="image/*" multiple onchange="escaneoOCRMultiple(event)">
-    <div id="status">Esperando imágenes...</div>
+    <input type="file" id="imageInput" accept="image/*" multiple onchange="escaneoConIA(event)">
+    <div id="status">Esperando fotos para analizar...</div>
     <div class="thumb-container" id="thumbs"></div>
   </div>
 
   <!-- Formulario -->
   <label for="destino">Destino:</label>
-  <input type="text" id="destino" placeholder="Ej: Maracay Centro (Puerta 3)">
+  <input type="text" id="destino" placeholder="Ej: Charallave">
+
+  <label for="puerta">Número de Puerta:</label>
+  <input type="text" id="puerta" placeholder="Ej: 3">
 
   <label for="mb">Código(s) MB:</label>
-  <input type="text" id="mb" placeholder="Ej: MB00073897 / MB00081234">
+  <input type="text" id="mb" placeholder="Ej: MB00073925 / MB00081234">
 
   <label for="pedido">Número(s) de Pedido:</label>
-  <input type="text" id="pedido" placeholder="Ej: 90004421 / 90005532">
+  <input type="text" id="pedido" placeholder="Ej: 90004144 / 90005532">
 
-  <label for="cajas">Caja (Descripción):</label>
-  <input type="text" id="cajas" placeholder="Ej: 3 Caja azul">
+  <label for="r">R:</label>
+  <input type="text" id="r" placeholder="Ej: R00123 / R00124">
+
+  <label for="cajas">Cantidad de Cajas Azules:</label>
+  <input type="text" id="cajas" placeholder="Ej: 3">
 
   <label for="nota">Número(s) de Nota de Entrega:</label>
   <input type="text" id="nota" placeholder="Ej: 223699 / 224154">
@@ -168,61 +160,31 @@
   <div class="preview" id="preview"></div>
 </div>
 
-<!-- Canvas oculto para compresión ultra-rápida -->
-<canvas id="compressCanvas" style="display:none;"></canvas>
-
 <script>
+  // PEGA AQUÍ TU API KEY QUE EMPIEZA POR AIzaSy...
+  const API_KEY = "AIzaSyD8I-iHwg-WARJ6wAnIe1QDTTE1Apr3H_s"; 
+
   let mbsSet = new Set();
   let pedidosSet = new Set();
+  let rSet = new Set();
   let notasSet = new Set();
   let drsSet = new Set();
-  let worker = null;
 
-  // Reutilizar el mismo Tesseract Worker para procesamiento ultrarrápido
-  async function obtenerWorker() {
-    if (!worker) {
-      worker = await Tesseract.createWorker('spa');
-      // Modo de segmentación rápido (PSM 6: Bloque único de texto)
-      await worker.setParameters({
-        tessedit_pageseg_mode: Tesseract.PSM.SINGLE_BLOCK
-      });
-    }
-    return worker;
-  }
-
-  // Redimensionar e incrementar contraste antes del OCR para ganar velocidad
-  function reescalarImagen(file, maxDimension = 1000) {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => {
-        let width = img.width;
-        let height = img.height;
-
-        if (width > height) {
-          if (width > maxDimension) {
-            height = Math.round((height * maxDimension) / width);
-            width = maxDimension;
-          }
-        } else {
-          if (height > maxDimension) {
-            width = Math.round((width * maxDimension) / height);
-            height = maxDimension;
-          }
-        }
-
-        const canvas = document.getElementById('compressCanvas');
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
-
-        resolve(canvas.toDataURL('image/jpeg', 0.85));
-      };
-      img.src = URL.createObjectURL(file);
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = error => reject(error);
+      reader.readAsDataURL(file);
     });
   }
 
-  async function escaneoOCRMultiple(event) {
+  async function escaneoConIA(event) {
+    if (!API_KEY || !API_KEY.startsWith("AIzaSy")) {
+      alert("Error: Por favor reemplaza la variable API_KEY con tu clave válida de Google AI Studio (que empieza por AIzaSy...).");
+      return;
+    }
+
     const files = Array.from(event.target.files);
     if (!files.length) return;
 
@@ -236,42 +198,78 @@
       thumbsDiv.appendChild(img);
     });
 
-    statusDiv.innerText = "⚡ Inicializando motor ultrarrápido...";
-    const ocrWorker = await obtenerWorker();
-
     for (let i = 0; i < files.length; i++) {
-      statusDiv.innerText = `⚡ Optimizando foto ${i + 1} de ${files.length}...`;
-      const base64Optimizado = await reescalarImagen(files[i]);
+      statusDiv.style.color = "#075e54";
+      statusDiv.innerText = `⚡ Analizando foto ${i + 1} de ${files.length}...`;
+      
+      try {
+        const base64Data = await fileToBase64(files[i]);
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
 
-      statusDiv.innerText = `⚡ Escaneando foto ${i + 1} de ${files.length}...`;
-      const result = await ocrWorker.recognize(base64Optimizado);
-      const text = result.data.text;
+        // Prompt mejorado para capturar tanto Etiquetas MB como Notas de Entrega hoja carta
+        const promptText = `Analiza este documento o etiqueta de envío. Extrae solo los siguientes datos:
+        
+        1. "nota": Número de la NOTA DE ENTREGA (ejemplo: si dice "NOTA DE ENTREGA N° 224154", extrae "224154").
+        2. "dr": El código DR (ejemplo: si en la sección de comentarios o texto dice "DR:19774" o "DR 19774", extrae "19774").
+        3. "mb": Código que empieza por MB si existe (ej: MB00073925).
+        4. "pedido": Número de pedido si existe.
+        5. "destino": Nombre de la Sucursal o Destino (ej: "Maracay Centro", "Charallave", etc.). Extrae solo el nombre de la ciudad/sucursal sin prefijos innecesarios.
+        6. "r": Código R si existe.
 
-      // Extracción rápida mediante Regex
-      const mbMatches = text.match(/MB\d{6,10}/gi);
-      if (mbMatches) mbMatches.forEach(m => mbsSet.add(m.toUpperCase()));
+        Responde SOLAMENTE en formato JSON estricto con las claves: "mb", "pedido", "destino", "r", "nota", "dr". Si no encuentras alguna clave pon null.`;
 
-      const pedidoMatches = text.match(/\b\d{7,10}\b/g);
-      if (pedidoMatches) pedidoMatches.forEach(p => pedidosSet.add(p));
+        const body = {
+          contents: [{
+            parts: [
+              { text: promptText },
+              { inline_data: { mime_type: files[i].type || "image/jpeg", data: base64Data } }
+            ]
+          }],
+          generationConfig: {
+            response_mime_type: "application/json"
+          }
+        };
 
-      const notaMatches = [...text.matchAll(/NOTA\s*(?:DE\s*ENTREGA)?\s*(?:N[°ºo]?)?\s*[:\.]?\s*(\d{5,8})/gi)];
-      notaMatches.forEach(m => { if (m[1]) notasSet.add(m[1]); });
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
 
-      const drMatches = [...text.matchAll(/DR\s*[:\.]?\s*(\d{4,8})/gi)];
-      drMatches.forEach(m => { if (m[1]) drsSet.add(m[1]); });
+        const data = await response.json();
 
-      if (!document.getElementById('destino').value) {
-        const destinoMatch = text.match(/Destino\s*[:\.]?\s*([^\n\r]+)/i);
-        if (destinoMatch && destinoMatch[1]) {
-          document.getElementById('destino').value = destinoMatch[1].trim();
+        if (data.error) {
+          throw new Error(data.error.message || "Error al procesar la API");
         }
+
+        if (data.candidates && data.candidates[0].content.parts[0].text) {
+          const resultado = JSON.parse(data.candidates[0].content.parts[0].text);
+
+          if (resultado.mb && resultado.mb !== "null") mbsSet.add(resultado.mb.toString().trim());
+          if (resultado.pedido && resultado.pedido !== "null") pedidosSet.add(resultado.pedido.toString().trim());
+          if (resultado.r && resultado.r !== "null") rSet.add(resultado.r.toString().trim());
+          if (resultado.nota && resultado.nota !== "null") notasSet.add(resultado.nota.toString().trim());
+          if (resultado.dr && resultado.dr !== "null") drsSet.add(resultado.dr.toString().trim());
+
+          if (resultado.destino && resultado.destino !== "null" && !document.getElementById('destino').value) {
+            document.getElementById('destino').value = resultado.destino.toString().trim();
+          }
+        }
+      } catch (e) {
+        console.error("Error al procesar con IA:", e);
+        statusDiv.style.color = "red";
+        statusDiv.innerText = `❌ Error: ${e.message}`;
+        return;
       }
     }
 
-    statusDiv.innerText = `✅ ¡Escaneo completado en tiempo récord!`;
+    statusDiv.style.color = "green";
+    statusDiv.innerText = `✅ ¡Lectura completada!`;
 
+    // Llenar campos acumulados si seleccionas varias fotos a la vez
     if (mbsSet.size > 0) document.getElementById('mb').value = Array.from(mbsSet).join(' / ');
     if (pedidosSet.size > 0) document.getElementById('pedido').value = Array.from(pedidosSet).join(' / ');
+    if (rSet.size > 0) document.getElementById('r').value = Array.from(rSet).join(' / ');
     if (notasSet.size > 0) document.getElementById('nota').value = Array.from(notasSet).join(' / ');
     if (drsSet.size > 0) document.getElementById('dr').value = Array.from(drsSet).join(' / ');
 
@@ -280,26 +278,31 @@
 
   function obtenerTexto() {
     const destino = document.getElementById('destino').value || '[DESTINO]';
+    const puertaVal = document.getElementById('puerta').value.trim() || '[PUERTA]';
     const mb = document.getElementById('mb').value || '[MB]';
     const pedido = document.getElementById('pedido').value || '[PEDIDO]';
-    const cajas = document.getElementById('cajas').value || '[CAJAS]';
+    const r = document.getElementById('r').value || '[R]';
+    const cajas = document.getElementById('cajas').value.trim() || '[CANTIDAD]';
     const nota = document.getElementById('nota').value || '[NOTA]';
     const dr = document.getElementById('dr').value || '[DR]';
     const entrega = document.getElementById('entrega').value || '[ENTREGA]';
     const recibe = document.getElementById('recibe').value || '[RECIBE]';
 
     return `📦 REGISTRO DE ENTREGA DIGITAL
-Destino: ${destino}
+📍Destino: ${destino}
+🚪Puerta: ${puertaVal}
 
 🔖 DATOS DEL PRODUCTO
 MB: ${mb}
-Pedido: ${pedido}
 
 📋 DETALLES DEL ENVÍO
+Pedido: ${pedido}
+R: ${r}
 
-📌 NOTA
-${cajas} (Nota de entrega): ${nota}
-DR:${dr}
+🟦 CAJAS AZULES: ${cajas}
+📌 NOTA DE ENTREGA
+N°: ${nota}
+DR: ${dr}
 
 👤 INSPECTORES
 
@@ -326,18 +329,22 @@ Inspector que recibe: ${recibe}`;
   function limpiarFormulario() {
     mbsSet.clear();
     pedidosSet.clear();
+    rSet.clear();
     notasSet.clear();
     drsSet.clear();
 
     document.getElementById('destino').value = '';
+    document.getElementById('puerta').value = '';
     document.getElementById('mb').value = '';
     document.getElementById('pedido').value = '';
+    document.getElementById('r').value = '';
     document.getElementById('cajas').value = '';
     document.getElementById('nota').value = '';
     document.getElementById('dr').value = '';
     document.getElementById('recibe').value = '';
     document.getElementById('imageInput').value = '';
-    document.getElementById('status').innerText = 'Esperando imágenes...';
+    document.getElementById('status').style.color = '#075e54';
+    document.getElementById('status').innerText = 'Esperando fotos para analizar...';
     document.getElementById('thumbs').innerHTML = '';
 
     actualizarPreview();
