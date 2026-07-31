@@ -3,43 +3,126 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Registro de Entrega DAKA</title>
+  <title>Sistema Integrado de Control DAKA</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
   <style>
+    :root {
+      --bg: #f4f6f9;
+      --card-bg: #ffffff;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --primary: #075e54;
+      --primary-hover: #054840;
+      --secondary: #2563eb;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --border: #e2e8f0;
+    }
+
     * { 
       box-sizing: border-box; 
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0; 
+      padding: 0; 
+      font-family: 'Inter', -apple-system, sans-serif; 
       touch-action: manipulation;
     }
-    
-    input, textarea, .preview {
+
+    input, textarea, .preview, .report-preview {
       -webkit-user-select: text;
       user-select: text;
     }
 
     body { 
-      background-color: #f0f2f5; 
-      padding: 10px; 
-      margin: 0; 
-      display: flex; 
-      justify-content: center;
-      align-items: flex-start;
-      min-height: 100vh;
-      overflow-x: hidden;
+      background-color: var(--bg); 
+      color: var(--text); 
+      padding: 12px; 
+      min-height: 100vh; 
     }
 
-    .card { 
+    /* Indicador de Estado de Conexión */
+    .connection-status {
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 6px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+    }
+    .status-online { background: #d1fae5; color: #065f46; }
+    .status-offline { background: #fee2e2; color: #991b1b; }
+
+    /* Navegación por pestañas compacta */
+    .app-header {
+      max-width: 900px;
+      margin: 0 auto 12px auto;
+      background: white;
+      padding: 8px 12px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .tabs-nav {
+      display: flex;
+      justify-content: space-around;
+      gap: 4px;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 4px;
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      padding: 8px 12px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      border-radius: 6px;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tab-btn .tab-text { display: none; font-size: 0.85rem; }
+
+    .tab-btn:hover { background-color: #f1f5f9; color: var(--primary); }
+    .tab-btn.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+      background-color: #eef5f3;
+    }
+
+    @media (min-width: 640px) {
+      .tab-btn .tab-text { display: inline; }
+      .tab-btn { font-size: 1rem; padding: 10px 16px; }
+    }
+
+    .tab-content { display: none; max-width: 900px; margin: 0 auto; }
+    .tab-content.active { display: block; }
+
+    /* ESTILOS PESTAÑA DAKA (REGISTRO INDIVIDUAL) */
+    .daka-card { 
       background: white; 
       padding: 18px; 
       border-radius: 14px; 
       width: 100%; 
-      max-width: 440px; 
-      box-shadow: 0 4px 15px rgba(0,0,0,0.08); 
+      max-width: 480px; 
+      margin: 0 auto;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.06); 
     }
 
-    h2 { color: #075e54; margin-top: 0; text-align: center; font-size: 20px; }
-    label { font-weight: 600; font-size: 13px; margin-top: 10px; display: block; color: #444; }
+    .daka-card h2 { color: var(--primary); margin-bottom: 12px; text-align: center; font-size: 20px; }
+    .daka-card label { font-weight: 600; font-size: 13px; margin-top: 10px; display: block; color: #444; }
     
-    input, textarea { 
+    .daka-card input, .daka-card textarea { 
       width: 100%; 
       padding: 9px 12px; 
       margin-top: 4px; 
@@ -49,11 +132,11 @@
       outline: none;
     }
 
-    input:focus { border-color: #075e54; }
+    .daka-card input:focus { border-color: var(--primary); }
     
     .ocr-box { 
       background: #eef5f3; 
-      border: 2px dashed #075e54; 
+      border: 2px dashed var(--primary); 
       padding: 12px; 
       border-radius: 10px; 
       text-align: center; 
@@ -61,7 +144,7 @@
     }
     .ocr-box input[type="file"] { display: none; }
     .btn-file { 
-      background: #075e54; 
+      background: var(--primary); 
       color: white; 
       padding: 9px 16px; 
       border-radius: 8px; 
@@ -71,10 +154,10 @@
       font-size: 14px;
       margin-top: 4px; 
     }
-    #status { font-size: 12px; color: #075e54; margin-top: 6px; font-weight: 600; word-break: break-word; }
+    #status { font-size: 12px; color: var(--primary); margin-top: 6px; font-weight: 600; word-break: break-word; }
 
     .btn-group { display: flex; gap: 8px; margin-top: 12px; }
-    button { 
+    button.btn-act { 
       width: 100%; 
       color: white; 
       border: none; 
@@ -84,9 +167,9 @@
       font-weight: bold; 
       cursor: pointer; 
     }
-    .btn-copy { background-color: #075e54; }
+    .btn-copy-daka { background-color: var(--primary); }
     .btn-wa { background-color: #25d366; }
-    .btn-clear { background-color: #d9534f; margin-top: 8px; }
+    .btn-clear { background-color: var(--danger); margin-top: 8px; }
     
     .preview { 
       background: #e5ddd5; 
@@ -103,192 +186,437 @@
     
     .thumb-container { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; justify-content: center; }
     .thumb-container img { width: 50px; height: 50px; object-fit: cover; border-radius: 6px; border: 1px solid #ccc; }
+
+    /* ESTILOS PESTAÑAS CONTROL DE INVENTARIO */
+    .top-controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .search-input {
+      flex: 1;
+      min-width: 180px;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      outline: none;
+    }
+
+    .btn-add {
+      background-color: var(--secondary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 0 16px;
+      height: 42px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-reset {
+      background-color: #fee2e2;
+      color: var(--danger);
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      padding: 0 14px;
+      height: 42px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .inventory-grid { display: flex; flex-direction: column; gap: 12px; }
+
+    .card-inv {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+      display: grid;
+      grid-template-columns: 1.5fr 1fr repeat(4, 1fr) 30px;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-inv.priority { border-left: 4px solid var(--warning); background-color: #fffdfa; }
+
+    .card-header-title { font-weight: 700; font-size: 0.95rem; color: var(--secondary); }
+    .label-inv { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; margin-bottom: 2px; }
+
+    .input-qty {
+      width: 100%;
+      padding: 6px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .toggle-btn {
+      width: 100%;
+      padding: 6px 2px;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .toggle-btn.yes { background-color: #d1fae5; color: #065f46; }
+    .toggle-btn.no { background-color: #fee2e2; color: #991b1b; }
+
+    .btn-delete { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.1rem; }
+
+    /* ESTILOS RESUMEN Y REPORTE */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px; }
+    .stat-card { background: white; border: 1px solid var(--border); padding: 14px; border-radius: 10px; }
+    .stat-card .num { font-size: 1.6rem; font-weight: 700; margin-top: 4px; }
+    
+    .summary-section { background: white; border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 12px; }
+    .summary-section h3 { font-size: 1rem; margin-bottom: 10px; }
+    .summary-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+    .summary-item { padding: 8px 12px; border-radius: 6px; background: var(--bg); display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; }
+
+    .report-card { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+    .report-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 14px; }
+    .field-group { display: flex; flex-direction: column; gap: 4px; }
+    .field-group label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); }
+    .field-group input { padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; }
+
+    .report-preview {
+      width: 100%; height: 320px; padding: 12px; background: #f8fafc;
+      border: 1px solid var(--border); border-radius: 8px; font-family: monospace;
+      font-size: 0.85rem; color: #1e293b; resize: vertical; margin-bottom: 14px; line-height: 1.4;
+    }
+
+    .btn-copy-rep { background-color: var(--success); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; }
+
+    /* Modales */
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; z-index: 100; }
+    .modal { background: white; padding: 20px; border-radius: 12px; width: 90%; max-width: 360px; }
+    .modal input { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; margin: 12px 0; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+    @media (max-width: 768px) {
+      .card-inv { grid-template-columns: 1fr 1fr; gap: 10px; }
+      .card-header-title { grid-column: span 2; }
+    }
   </style>
 </head>
 <body>
 
-<div class="card">
-  <h2>📋 Registro de Entrega DAKA</h2>
+  <!-- Estado Firebase -->
+  <div id="connectionStatus" class="connection-status status-offline">Conectando a Firebase...</div>
 
-  <!-- Escáner por IA -->
-  <div class="ocr-box">
-    <p style="font-size: 13px; font-weight: bold; margin: 0 0 4px 0; color: #075e54;">🤖 Escanear Etiqueta / Documento DAKA</p>
-    <label for="imageInput" class="btn-file">📷 Tomar / Seleccionar Fotos</label>
-    <input type="file" id="imageInput" accept="image/*" multiple onchange="escaneoConIA(event)">
-    <div id="status">Esperando fotos para analizar...</div>
-    <div class="thumb-container" id="thumbs"></div>
+  <!-- Navegación Principal -->
+  <header class="app-header">
+    <nav class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('daka')">
+        <span>📦</span><span class="tab-text">Registro DAKA</span>
+      </button>
+      <button class="tab-btn" onclick="switchTab('gestion')">
+        <span>📋</span><span class="tab-text">Gestión Tiendas</span>
+      </button>
+      <button class="tab-btn" onclick="switchTab('resumen')">
+        <span>📊</span><span class="tab-text">Resumen</span>
+      </button>
+      <button class="tab-btn" onclick="switchTab('reporte')">
+        <span>📝</span><span class="tab-text">Reporte Turno</span>
+      </button>
+    </nav>
+  </header>
+
+  <!-- PESTAÑA 1: REGISTRO DAKA -->
+  <div id="tab-daka" class="tab-content active">
+    <div class="daka-card">
+      <h2>📋 Registro de Entrega DAKA</h2>
+
+      <div class="ocr-box">
+        <p style="font-size: 13px; font-weight: bold; margin: 0 0 4px 0; color: #075e54;">🤖 Escanear Etiqueta / Documento DAKA</p>
+        <label for="imageInput" class="btn-file">📷 Tomar / Seleccionar Fotos</label>
+        <input type="file" id="imageInput" accept="image/*" multiple onchange="escaneoConIA(event)">
+        <div id="status">Esperando fotos para analizar...</div>
+        <div class="thumb-container" id="thumbs"></div>
+      </div>
+
+      <label for="destino">Destino:</label>
+      <input type="text" id="destino" placeholder="Ej: Charallave">
+
+      <label for="puerta">Número de Puerta:</label>
+      <input type="text" id="puerta" placeholder="Ej: 3">
+
+      <label for="mb">Código(s) MB:</label>
+      <input type="text" id="mb" placeholder="Ej: MB00073925 / MB00081234">
+
+      <label for="pedido">Número(s) de Pedido:</label>
+      <input type="text" id="pedido" placeholder="Ej: 90004144 / 90005532">
+
+      <label for="r">R:</label>
+      <input type="text" id="r" placeholder="Ej: R00123 / R00124">
+
+      <label for="cajas">Cantidad de Cajas Azules:</label>
+      <input type="text" id="cajas" placeholder="Ej: 3">
+
+      <label for="nota">Número(s) de Nota de Entrega:</label>
+      <input type="text" id="nota" placeholder="Ej: 223699 / 224154">
+
+      <label for="dr">DR(s):</label>
+      <input type="text" id="dr" placeholder="Ej: 19321 / 19774">
+
+      <label for="entrega">Inspector que entrega:</label>
+      <input type="text" id="entrega" value="Gabriel López">
+
+      <label for="recibe">Inspector que recibe:</label>
+      <input type="text" id="recibe" placeholder="Ej: Aldo Rumbo">
+
+      <div class="btn-group">
+        <button class="btn-act btn-copy-daka" onclick="copiarReporteDaka()">📋 Copiar</button>
+        <button class="btn-act btn-wa" onclick="abrirWhatsAppDaka()">💬 WhatsApp</button>
+      </div>
+      <button class="btn-act btn-clear" onclick="limpiarFormularioDaka()">🗑️ Limpiar Formulario</button>
+
+      <label style="margin-top: 15px;">Vista previa:</label>
+      <div class="preview" id="previewDaka"></div>
+    </div>
   </div>
 
-  <!-- Formulario -->
-  <label for="destino">Destino:</label>
-  <input type="text" id="destino" placeholder="Ej: Charallave">
+  <!-- PESTAÑA 2: GESTIÓN DE TIENDAS -->
+  <div id="tab-gestion" class="tab-content">
+    <div class="top-controls">
+      <input type="text" id="searchInput" class="search-input" placeholder="🔍 Buscar agencia/ubicación..." oninput="renderInv()">
+      <button class="btn-add" id="openModalBtn">+ Nueva</button>
+      <button class="btn-reset" onclick="resetDailyInventory()">🔄 Reiniciar Día</button>
+    </div>
 
-  <label for="puerta">Número de Puerta:</label>
-  <input type="text" id="puerta" placeholder="Ej: 3">
-
-  <label for="mb">Código(s) MB:</label>
-  <input type="text" id="mb" placeholder="Ej: MB00073925 / MB00081234">
-
-  <label for="pedido">Número(s) de Pedido:</label>
-  <input type="text" id="pedido" placeholder="Ej: 90004144 / 90005532">
-
-  <label for="r">R:</label>
-  <input type="text" id="r" placeholder="Ej: R00123 / R00124">
-
-  <label for="cajas">Cantidad de Cajas Azules:</label>
-  <input type="text" id="cajas" placeholder="Ej: 3">
-
-  <label for="nota">Número(s) de Nota de Entrega:</label>
-  <input type="text" id="nota" placeholder="Ej: 223699 / 224154">
-
-  <label for="dr">DR(s):</label>
-  <input type="text" id="dr" placeholder="Ej: 19321 / 19774">
-
-  <label for="entrega">Inspector que entrega:</label>
-  <input type="text" id="entrega" value="Gabriel López">
-
-  <label for="recibe">Inspector que recibe:</label>
-  <input type="text" id="recibe" placeholder="Ej: Aldo Rumbo">
-
-  <div class="btn-group">
-    <button class="btn-copy" onclick="copiarReporte()">📋 Copiar</button>
-    <button class="btn-wa" onclick="abrirWhatsApp()">💬 WhatsApp</button>
+    <main class="inventory-grid" id="inventoryContainer"></main>
   </div>
-  <button class="btn-clear" onclick="limpiarFormulario()">🗑️ Limpiar Formulario</button>
 
-  <label style="margin-top: 15px;">Vista previa:</label>
-  <div class="preview" id="preview"></div>
-</div>
+  <!-- PESTAÑA 3: RESUMEN VISUAL -->
+  <div id="tab-resumen" class="tab-content">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="label-inv">Total Agencias</div>
+        <div class="num" id="statTotal">0</div>
+      </div>
+      <div class="stat-card" style="color: var(--success)">
+        <div class="label-inv">Despachadas</div>
+        <div class="num" id="statDesp">0</div>
+      </div>
+      <div class="stat-card" style="color: var(--warning)">
+        <div class="label-inv">Pendientes</div>
+        <div class="num" id="statPend">0</div>
+      </div>
+    </div>
 
-<script>
-  // PEGA AQUÍ TU API KEY QUE EMPIEZA POR AIzaSy...
-  const API_KEY = "AIzaSyD8I-iHwg-WARJ6wAnIe1QDTTE1Apr3H_s"; 
+    <div class="summary-section">
+      <h3>✅ Tiendas Despachadas</h3>
+      <ul class="summary-list" id="listDespachadas"></ul>
+    </div>
 
-  let mbsSet = new Set();
-  let pedidosSet = new Set();
-  let rSet = new Set();
-  let notasSet = new Set();
-  let drsSet = new Set();
+    <div class="summary-section">
+      <h3>⏳ Tiendas Pendientes (Playa / Reja)</h3>
+      <ul class="summary-list" id="listPendientes"></ul>
+    </div>
 
-  function fileToBase64(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result.split(',')[1]);
-      reader.onerror = error => reject(error);
-      reader.readAsDataURL(file);
+    <div class="summary-section">
+      <h3>📦 En Almacén / Proceso</h3>
+      <ul class="summary-list" id="listEnProceso"></ul>
+    </div>
+  </div>
+
+  <!-- PESTAÑA 4: REPORTE TURNO -->
+  <div id="tab-reporte" class="tab-content">
+    <div class="report-card">
+      <h3 style="margin-bottom: 12px;">📋 Reporte de Entrega de Turno</h3>
+
+      <div class="report-fields">
+        <div class="field-group">
+          <label>Fecha:</label>
+          <input type="text" id="repFecha" oninput="generateTextReport()">
+        </div>
+        <div class="field-group">
+          <label>Turno:</label>
+          <input type="text" id="repTurno" value="tercer turno" oninput="generateTextReport()">
+        </div>
+        <div class="field-group">
+          <label>Inspector que entrega:</label>
+          <input type="text" id="repEntrega" value="Gabriel López" oninput="generateTextReport()">
+        </div>
+        <div class="field-group">
+          <label>Inspector que recibe:</label>
+          <input type="text" id="repRecibe" placeholder="(Por asignar)" oninput="generateTextReport()">
+        </div>
+      </div>
+
+      <textarea id="reportTextarea" class="report-preview" readonly></textarea>
+
+      <button class="btn-copy-rep" onclick="copyReportText()">📋 Copiar Reporte General</button>
+    </div>
+  </div>
+
+  <!-- Modal Nueva Ubicación -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <h3 style="margin-bottom: 8px;">Nueva Ubicación</h3>
+      <input type="text" id="locationInput" placeholder="Ej: Agencia Valencia">
+      <div class="modal-actions">
+        <button style="padding: 8px 12px; background: #ccc; border:none; border-radius:6px;" id="closeModalBtn">Cancelar</button>
+        <button style="padding: 8px 12px; background: var(--secondary); color:white; border:none; border-radius:6px;" id="saveLocationBtn">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- 1. CONFIGURACIÓN E INICIALIZACIÓN DE FIREBASE ---
+    const firebaseConfig = {
+      databaseURL: "https://daka-41dc3-default-rtdb.firebaseio.com",
+      projectId: "daka-41dc3",
+      authDomain: "daka-41dc3.firebaseapp.com",
+      storageBucket: "daka-41dc3.appspot.com"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const inventoryRef = db.ref('inventory');
+
+    const statusElement = document.getElementById('connectionStatus');
+    
+    // Indicador de conexión en vivo
+    db.ref('.info/connected').on('value', (snap) => {
+      if (snap.val() === true) {
+        statusElement.innerText = "🟢 Conectado a Realtime Database (daka-41dc3)";
+        statusElement.className = "connection-status status-online";
+      } else {
+        statusElement.innerText = "🔴 Sin conexión (Modo Local)";
+        statusElement.className = "connection-status status-offline";
+      }
     });
-  }
 
-  async function escaneoConIA(event) {
-    if (!API_KEY || !API_KEY.startsWith("AIzaSy")) {
-      alert("Error: Por favor reemplaza la variable API_KEY con tu clave válida de Google AI Studio (que empieza por AIzaSy...).");
-      return;
+    // --- 2. CONTROL DE PESTAÑAS ---
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+      const tabMap = { 'daka': 0, 'gestion': 1, 'resumen': 2, 'reporte': 3 };
+      document.querySelectorAll('.tab-btn')[tabMap[tabName]].classList.add('active');
+      document.getElementById(`tab-${tabName}`).classList.add('active');
+
+      if (tabName === 'gestion') renderInv();
+      if (tabName === 'resumen') renderSummary();
+      if (tabName === 'reporte') generateTextReport();
     }
 
-    const files = Array.from(event.target.files);
-    if (!files.length) return;
+    // --- 3. MÓDULO 1: REGISTRO DAKA CON IA ---
+    const API_KEY = "AIzaSyD8I-iHwg-WARJ6wAnIe1QDTTE1Apr3H_s"; 
 
-    const statusDiv = document.getElementById('status');
-    const thumbsDiv = document.getElementById('thumbs');
-    thumbsDiv.innerHTML = '';
+    let mbsSet = new Set();
+    let pedidosSet = new Set();
+    let rSet = new Set();
+    let notasSet = new Set();
+    let drsSet = new Set();
 
-    files.forEach(file => {
-      const img = document.createElement('img');
-      img.src = URL.createObjectURL(file);
-      thumbsDiv.appendChild(img);
-    });
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = error => reject(error);
+        reader.readAsDataURL(file);
+      });
+    }
 
-    for (let i = 0; i < files.length; i++) {
-      statusDiv.style.color = "#075e54";
-      statusDiv.innerText = `⚡ Analizando foto ${i + 1} de ${files.length}...`;
-      
-      try {
-        const base64Data = await fileToBase64(files[i]);
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
-
-        // Prompt mejorado para capturar tanto Etiquetas MB como Notas de Entrega hoja carta
-        const promptText = `Analiza este documento o etiqueta de envío. Extrae solo los siguientes datos:
-        
-        1. "nota": Número de la NOTA DE ENTREGA (ejemplo: si dice "NOTA DE ENTREGA N° 224154", extrae "224154").
-        2. "dr": El código DR (ejemplo: si en la sección de comentarios o texto dice "DR:19774" o "DR 19774", extrae "19774").
-        3. "mb": Código que empieza por MB si existe (ej: MB00073925).
-        4. "pedido": Número de pedido si existe.
-        5. "destino": Nombre de la Sucursal o Destino (ej: "Maracay Centro", "Charallave", etc.). Extrae solo el nombre de la ciudad/sucursal sin prefijos innecesarios.
-        6. "r": Código R si existe.
-
-        Responde SOLAMENTE en formato JSON estricto con las claves: "mb", "pedido", "destino", "r", "nota", "dr". Si no encuentras alguna clave pon null.`;
-
-        const body = {
-          contents: [{
-            parts: [
-              { text: promptText },
-              { inline_data: { mime_type: files[i].type || "image/jpeg", data: base64Data } }
-            ]
-          }],
-          generationConfig: {
-            response_mime_type: "application/json"
-          }
-        };
-
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
-        });
-
-        const data = await response.json();
-
-        if (data.error) {
-          throw new Error(data.error.message || "Error al procesar la API");
-        }
-
-        if (data.candidates && data.candidates[0].content.parts[0].text) {
-          const resultado = JSON.parse(data.candidates[0].content.parts[0].text);
-
-          if (resultado.mb && resultado.mb !== "null") mbsSet.add(resultado.mb.toString().trim());
-          if (resultado.pedido && resultado.pedido !== "null") pedidosSet.add(resultado.pedido.toString().trim());
-          if (resultado.r && resultado.r !== "null") rSet.add(resultado.r.toString().trim());
-          if (resultado.nota && resultado.nota !== "null") notasSet.add(resultado.nota.toString().trim());
-          if (resultado.dr && resultado.dr !== "null") drsSet.add(resultado.dr.toString().trim());
-
-          if (resultado.destino && resultado.destino !== "null" && !document.getElementById('destino').value) {
-            document.getElementById('destino').value = resultado.destino.toString().trim();
-          }
-        }
-      } catch (e) {
-        console.error("Error al procesar con IA:", e);
-        statusDiv.style.color = "red";
-        statusDiv.innerText = `❌ Error: ${e.message}`;
+    async function escaneoConIA(event) {
+      if (!API_KEY || !API_KEY.startsWith("AIzaSy")) {
+        alert("Error: Configura una API_KEY válida.");
         return;
       }
+
+      const files = Array.from(event.target.files);
+      if (!files.length) return;
+
+      const statusDiv = document.getElementById('status');
+      const thumbsDiv = document.getElementById('thumbs');
+      thumbsDiv.innerHTML = '';
+
+      files.forEach(file => {
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(file);
+        thumbsDiv.appendChild(img);
+      });
+
+      for (let i = 0; i < files.length; i++) {
+        statusDiv.style.color = "var(--primary)";
+        statusDiv.innerText = `⚡ Analizando foto ${i + 1} de ${files.length}...`;
+        
+        try {
+          const base64Data = await fileToBase64(files[i]);
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
+
+          const promptText = `Analiza este documento o etiqueta de envío. Extrae solo los siguientes datos:
+          1. "nota": Número de la NOTA DE ENTREGA (ej: "224154").
+          2. "dr": El código DR (ej: "19774").
+          3. "mb": Código que empieza por MB (ej: MB00073925).
+          4. "pedido": Número de pedido.
+          5. "destino": Nombre de la Sucursal/Destino.
+          6. "r": Código R.
+          Responde SOLAMENTE en formato JSON estricto con las claves: "mb", "pedido", "destino", "r", "nota", "dr". Si no encuentras alguna pon null.`;
+
+          const body = {
+            contents: [{ parts: [{ text: promptText }, { inline_data: { mime_type: files[i].type || "image/jpeg", data: base64Data } }] }],
+            generationConfig: { response_mime_type: "application/json" }
+          };
+
+          const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+          const data = await response.json();
+
+          if (data.error) throw new Error(data.error.message);
+
+          if (data.candidates && data.candidates[0].content.parts[0].text) {
+            const res = JSON.parse(data.candidates[0].content.parts[0].text);
+            if (res.mb && res.mb !== "null") mbsSet.add(res.mb.toString().trim());
+            if (res.pedido && res.pedido !== "null") pedidosSet.add(res.pedido.toString().trim());
+            if (res.r && res.r !== "null") rSet.add(res.r.toString().trim());
+            if (res.nota && res.nota !== "null") notasSet.add(res.nota.toString().trim());
+            if (res.dr && res.dr !== "null") drsSet.add(res.dr.toString().trim());
+            if (res.destino && res.destino !== "null" && !document.getElementById('destino').value) {
+              document.getElementById('destino').value = res.destino.toString().trim();
+            }
+          }
+        } catch (e) {
+          statusDiv.style.color = "red";
+          statusDiv.innerText = `❌ Error: ${e.message}`;
+          return;
+        }
+      }
+
+      statusDiv.style.color = "green";
+      statusDiv.innerText = `✅ ¡Lectura completada!`;
+
+      if (mbsSet.size > 0) document.getElementById('mb').value = Array.from(mbsSet).join(' / ');
+      if (pedidosSet.size > 0) document.getElementById('pedido').value = Array.from(pedidosSet).join(' / ');
+      if (rSet.size > 0) document.getElementById('r').value = Array.from(rSet).join(' / ');
+      if (notasSet.size > 0) document.getElementById('nota').value = Array.from(notasSet).join(' / ');
+      if (drsSet.size > 0) document.getElementById('dr').value = Array.from(drsSet).join(' / ');
+
+      actualizarPreviewDaka();
     }
 
-    statusDiv.style.color = "green";
-    statusDiv.innerText = `✅ ¡Lectura completada!`;
+    function obtenerTextoDaka() {
+      const destino = document.getElementById('destino').value || '[DESTINO]';
+      const puertaVal = document.getElementById('puerta').value.trim() || '[PUERTA]';
+      const mb = document.getElementById('mb').value || '[MB]';
+      const pedido = document.getElementById('pedido').value || '[PEDIDO]';
+      const r = document.getElementById('r').value || '[R]';
+      const cajas = document.getElementById('cajas').value.trim() || '[CANTIDAD]';
+      const nota = document.getElementById('nota').value || '[NOTA]';
+      const dr = document.getElementById('dr').value || '[DR]';
+      const entrega = document.getElementById('entrega').value || '[ENTREGA]';
+      const recibe = document.getElementById('recibe').value || '[RECIBE]';
 
-    // Llenar campos acumulados si seleccionas varias fotos a la vez
-    if (mbsSet.size > 0) document.getElementById('mb').value = Array.from(mbsSet).join(' / ');
-    if (pedidosSet.size > 0) document.getElementById('pedido').value = Array.from(pedidosSet).join(' / ');
-    if (rSet.size > 0) document.getElementById('r').value = Array.from(rSet).join(' / ');
-    if (notasSet.size > 0) document.getElementById('nota').value = Array.from(notasSet).join(' / ');
-    if (drsSet.size > 0) document.getElementById('dr').value = Array.from(drsSet).join(' / ');
-
-    actualizarPreview();
-  }
-
-  function obtenerTexto() {
-    const destino = document.getElementById('destino').value || '[DESTINO]';
-    const puertaVal = document.getElementById('puerta').value.trim() || '[PUERTA]';
-    const mb = document.getElementById('mb').value || '[MB]';
-    const pedido = document.getElementById('pedido').value || '[PEDIDO]';
-    const r = document.getElementById('r').value || '[R]';
-    const cajas = document.getElementById('cajas').value.trim() || '[CANTIDAD]';
-    const nota = document.getElementById('nota').value || '[NOTA]';
-    const dr = document.getElementById('dr').value || '[DR]';
-    const entrega = document.getElementById('entrega').value || '[ENTREGA]';
-    const recibe = document.getElementById('recibe').value || '[RECIBE]';
-
-    return `📦 REGISTRO DE ENTREGA DIGITAL
+      return `📦 REGISTRO DE ENTREGA DIGITAL
 📍Destino: ${destino}
 🚪Puerta: ${puertaVal}
 
@@ -308,54 +636,169 @@ DR: ${dr}
 
 Inspector que entrega: ${entrega}
 Inspector que recibe: ${recibe}`;
-  }
+    }
 
-  function actualizarPreview() {
-    document.getElementById('preview').innerText = obtenerTexto();
-  }
+    function actualizarPreviewDaka() { document.getElementById('previewDaka').innerText = obtenerTextoDaka(); }
+    function copiarReporteDaka() { navigator.clipboard.writeText(obtenerTextoDaka()).then(() => alert('¡Reporte copiado!')); }
+    function abrirWhatsAppDaka() { window.open(`https://wa.me/?text=${encodeURIComponent(obtenerTextoDaka())}`, '_blank'); }
 
-  function copiarReporte() {
-    const texto = obtenerTexto();
-    navigator.clipboard.writeText(texto).then(() => {
-      alert('¡Reporte copiado al portapapeles!');
+    function limpiarFormularioDaka() {
+      mbsSet.clear(); pedidosSet.clear(); rSet.clear(); notasSet.clear(); drsSet.clear();
+      ['destino','puerta','mb','pedido','r','cajas','nota','dr','recibe'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('imageInput').value = '';
+      document.getElementById('status').innerText = 'Esperando fotos para analizar...';
+      document.getElementById('thumbs').innerHTML = '';
+      actualizarPreviewDaka();
+    }
+
+    document.querySelectorAll('#tab-daka input').forEach(i => i.addEventListener('input', actualizarPreviewDaka));
+
+    // --- 4. MÓDULO 2: GESTIÓN DE INVENTARIOS EN TIEMPO REAL CON FIREBASE ---
+    const defaultData = [
+      { id: 1, location: "Barquisimeto centro", qty: 0, ver: true, playa: true, reja: false, desp: false },
+      { id: 2, location: "Porlamar", qty: 0, ver: true, playa: false, reja: true, desp: false },
+      { id: 3, location: "El tigre", qty: 0, ver: true, playa: false, reja: false, desp: true }
+    ];
+
+    let inventory = [];
+
+    // Guardar cambios en Firebase
+    function saveState() {
+      localStorage.setItem('daily_inventory', JSON.stringify(inventory));
+      inventoryRef.set(inventory);
+    }
+
+    // Sincronizar en tiempo real desde Firebase
+    inventoryRef.on('value', (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        inventory = data;
+      } else {
+        inventory = defaultData;
+        saveState();
+      }
+      renderInv();
     });
-  }
 
-  function abrirWhatsApp() {
-    const texto = encodeURIComponent(obtenerTexto());
-    window.open(`https://wa.me/?text=${texto}`, '_blank');
-  }
+    function renderInv() {
+      const container = document.getElementById('inventoryContainer');
+      container.innerHTML = '';
+      const query = document.getElementById('searchInput').value.toLowerCase().trim();
 
-  function limpiarFormulario() {
-    mbsSet.clear();
-    pedidosSet.clear();
-    rSet.clear();
-    notasSet.clear();
-    drsSet.clear();
+      let filtered = inventory.filter(i => i.location.toLowerCase().includes(query));
+      filtered.sort((a, b) => (b.playa || b.reja ? 1 : 0) - (a.playa || a.reja ? 1 : 0));
 
-    document.getElementById('destino').value = '';
-    document.getElementById('puerta').value = '';
-    document.getElementById('mb').value = '';
-    document.getElementById('pedido').value = '';
-    document.getElementById('r').value = '';
-    document.getElementById('cajas').value = '';
-    document.getElementById('nota').value = '';
-    document.getElementById('dr').value = '';
-    document.getElementById('recibe').value = '';
-    document.getElementById('imageInput').value = '';
-    document.getElementById('status').style.color = '#075e54';
-    document.getElementById('status').innerText = 'Esperando fotos para analizar...';
-    document.getElementById('thumbs').innerHTML = '';
+      filtered.forEach((item) => {
+        const realIndex = inventory.findIndex(i => i.id === item.id);
+        const card = document.createElement('div');
+        card.className = `card-inv ${item.playa || item.reja ? 'priority' : ''}`;
+        card.innerHTML = `
+          <div><div class="label-inv">Ubicación</div><div class="card-header-title">${item.location}</div></div>
+          <div><div class="label-inv">Paletas</div><input type="number" class="input-qty" value="${item.qty}" min="0" onchange="updateQty(${realIndex}, this.value)"></div>
+          <div><div class="label-inv">Verif.</div><button class="toggle-btn ${item.ver ? 'yes' : 'no'}" onclick="toggleStatus(${realIndex}, 'ver')">${item.ver ? 'SÍ' : 'NO'}</button></div>
+          <div><div class="label-inv">Playa</div><button class="toggle-btn ${item.playa ? 'yes' : 'no'}" onclick="toggleStatus(${realIndex}, 'playa')">${item.playa ? 'SÍ' : 'NO'}</button></div>
+          <div><div class="label-inv">Reja</div><button class="toggle-btn ${item.reja ? 'yes' : 'no'}" onclick="toggleStatus(${realIndex}, 'reja')">${item.reja ? 'SÍ' : 'NO'}</button></div>
+          <div><div class="label-inv">Desp.</div><button class="toggle-btn ${item.desp ? 'yes' : 'no'}" onclick="toggleStatus(${realIndex}, 'desp')">${item.desp ? 'SÍ' : 'NO'}</button></div>
+          <div><button class="btn-delete" onclick="deleteItem(${realIndex})">✕</button></div>
+        `;
+        container.appendChild(card);
+      });
+    }
 
-    actualizarPreview();
-  }
+    function toggleStatus(index, field) {
+      const item = inventory[index];
+      item[field] = !item[field];
+      if (field === 'desp' && item.desp) { item.playa = false; item.reja = false; }
+      saveState();
+    }
 
-  document.querySelectorAll('input').forEach(input => {
-    input.addEventListener('input', actualizarPreview);
-  });
+    function updateQty(index, val) { 
+      inventory[index].qty = parseInt(val) || 0; 
+      saveState(); 
+    }
 
-  actualizarPreview();
-</script>
+    function deleteItem(index) { 
+      if (confirm('¿Deseas eliminar esta tienda del inventario?')) { 
+        inventory.splice(index, 1); 
+        saveState(); 
+      } 
+    }
 
+    function resetDailyInventory() {
+      if (confirm("¿Deseas reiniciar todos los datos del día?") && prompt("Clave de seguridad:") === "1234") {
+        inventory = inventory.map(i => ({ ...i, qty: 0, ver: false, playa: false, reja: false, desp: false }));
+        saveState();
+        alert("Inventario del día limpiado exitosamente.");
+      }
+    }
+
+    // --- 5. RESUMEN Y REPORTE GENERAL ---
+    function renderSummary() {
+      const listDesp = document.getElementById('listDespachadas');
+      const listPend = document.getElementById('listPendientes');
+      const listProc = document.getElementById('listEnProceso');
+      listDesp.innerHTML = ''; listPend.innerHTML = ''; listProc.innerHTML = '';
+
+      let cDesp = 0, cPend = 0;
+      inventory.forEach(i => {
+        if (i.desp) {
+          cDesp++;
+          listDesp.innerHTML += `<li class="summary-item"><span>${i.location} (${i.qty} paletas)</span><b>DESPACHADA</b></li>`;
+        } else if (i.ver && (i.playa || i.reja)) {
+          cPend++;
+          listPend.innerHTML += `<li class="summary-item"><span>${i.location} — ${i.qty} paletas</span><b>${i.playa ? 'PLAYA' : 'REJA'}</b></li>`;
+        } else {
+          listProc.innerHTML += `<li class="summary-item"><span>${i.location}</span><span>${i.ver ? 'Verificada' : 'Pendiente'}</span></li>`;
+        }
+      });
+
+      document.getElementById('statTotal').innerText = inventory.length;
+      document.getElementById('statDesp').innerText = cDesp;
+      document.getElementById('statPend').innerText = cPend;
+    }
+
+    function generateTextReport() {
+      const fecha = document.getElementById('repFecha').value || new Date().toLocaleDateString('es-ES');
+      const turno = document.getElementById('repTurno').value || '---';
+      const entrega = document.getElementById('repEntrega').value || 'Gabriel López';
+      const recibe = document.getElementById('repRecibe').value || '';
+
+      const playa = inventory.filter(i => i.ver && i.playa && !i.desp);
+      const reja = inventory.filter(i => i.ver && i.reja && !i.desp);
+      const desp = inventory.filter(i => i.desp);
+
+      let txt = `📌 *REPORTE DE ENTREGA DE TURNO*\n-----------------------------------\n📅 *Fecha:* ${fecha}\n🔄 *Entrega:* Área de digital al ${turno}\n-----------------------------------\n\n`;
+      txt += `🏖️ *DIGITAL EN EL ÁREA DE PLAYA* (${playa.length})\n`;
+      playa.forEach(i => txt += `  ▫️ ${i.location}${i.qty > 0 ? ` (${i.qty} paletas)` : ''}\n`);
+      txt += `\n🔒 *DENTRO DE JAULA / REJA* (${reja.length})\n`;
+      reja.forEach(i => txt += `  ▫️ ${i.location}${i.qty > 0 ? ` (${i.qty} paletas)` : ''}\n`);
+      txt += `\n🚚 *TIENDAS DESPACHADAS EN TURNO* (${desp.length})\n`;
+      desp.forEach(i => txt += `  ▫️ ${i.location}\n`);
+      txt += `\n-----------------------------------\n👤 *Inspector que entrega:* ${entrega}\n👤 *Inspector que recibe:* ${recibe}\n`;
+
+      document.getElementById('reportTextarea').value = txt;
+    }
+
+    function copyReportText() {
+      navigator.clipboard.writeText(document.getElementById('reportTextarea').value).then(() => alert('¡Reporte copiado!'));
+    }
+
+    // Modales
+    document.getElementById('openModalBtn').onclick = () => document.getElementById('modalOverlay').style.display = 'flex';
+    document.getElementById('closeModalBtn').onclick = () => document.getElementById('modalOverlay').style.display = 'none';
+    document.getElementById('saveLocationBtn').onclick = () => {
+      const val = document.getElementById('locationInput').value.trim();
+      if (val) {
+        inventory.push({ id: Date.now(), location: val, qty: 0, ver: false, playa: false, reja: false, desp: false });
+        saveState();
+        document.getElementById('modalOverlay').style.display = 'none';
+        document.getElementById('locationInput').value = '';
+      }
+    };
+
+    // Inicialización
+    document.getElementById('repFecha').value = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit' });
+    actualizarPreviewDaka();
+  </script>
 </body>
 </html>
