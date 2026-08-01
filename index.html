@@ -944,7 +944,7 @@ Inspector que recibe: ${recibe}`;
       const desp = inventory.filter(i => i.desp);
 
       let txt = `📌 *REPORTE DE ENTREGA DE TURNO*\n-----------------------------------\n📅 *Fecha:* ${fecha}\n🔄 *Entrega:* Área de digital al ${turno}\n-----------------------------------\n\n`;
-      txt += `🏖️ *DIGITAL EN EL ÁREA DE PLAYA* (${playa.length})\n`;
+      txt += `📦 *DIGITAL EN EL ÁREA DE PLAYA* (${playa.length})\n`;
       playa.forEach(i => txt += `  ▫️ ${i.location}${i.qtyPlaya > 0 ? ` (${i.qtyPlaya} Pedido)` : ''}\n`);
       txt += `\n🔒 *DENTRO DE JAULA / REJA* (${reja.length})\n`;
       reja.forEach(i => txt += `  ▫️ ${i.location}${i.qtyReja > 0 ? ` (${i.qtyReja} Pedido)` : ''}\n`);
