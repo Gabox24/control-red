@@ -23,6 +23,7 @@
       --danger: #ef4444;
       --warning: #f59e0b;
       --border: #e2e8f0;
+      --radius: 12px;
     }
 
     * { 
@@ -61,8 +62,8 @@
       margin: 0 auto 12px auto;
       background: white;
       padding: 8px 12px;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      border-radius: var(--radius);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.04);
     }
 
     .tabs-nav {
@@ -82,8 +83,8 @@
       color: var(--text-muted);
       cursor: pointer;
       border-bottom: 3px solid transparent;
-      border-radius: 6px;
-      transition: all 0.2s;
+      border-radius: 8px;
+      transition: all 0.2s ease;
       display: flex;
       align-items: center;
       gap: 6px;
@@ -109,57 +110,55 @@
     /* PESTAÑA DAKA */
     .daka-card { 
       background: white; 
-      padding: 18px; 
-      border-radius: 14px; 
+      padding: 20px; 
+      border-radius: 16px; 
       width: 100%; 
-      max-width: 480px; 
+      max-width: 500px; 
       margin: 0 auto;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.06); 
+      box-shadow: 0 6px 20px rgba(0,0,0,0.06); 
     }
 
-    .daka-card h2 { color: var(--primary); margin-bottom: 12px; text-align: center; font-size: 20px; }
+    .daka-card h2 { color: var(--primary); margin-bottom: 14px; text-align: center; font-size: 20px; }
     .daka-card label { font-weight: 600; font-size: 13px; margin-top: 10px; display: block; color: #444; }
     
     .daka-card input, .daka-card textarea { 
       width: 100%; 
-      padding: 9px 12px; 
+      padding: 10px 12px; 
       margin-top: 4px; 
-      border: 1px solid #ccc; 
+      border: 1px solid var(--border); 
       border-radius: 8px; 
       font-size: 14px;
       outline: none;
     }
 
-    .daka-card input:focus { border-color: var(--primary); }
-    
     .ocr-box { 
       background: #eef5f3; 
       border: 2px dashed var(--primary); 
-      padding: 12px; 
+      padding: 14px; 
       border-radius: 10px; 
       text-align: center; 
-      margin-bottom: 12px; 
+      margin-bottom: 14px; 
     }
     .ocr-box input[type="file"] { display: none; }
     .btn-file { 
       background: var(--primary); 
       color: white; 
-      padding: 9px 16px; 
+      padding: 10px 16px; 
       border-radius: 8px; 
       cursor: pointer; 
       display: inline-block; 
       font-weight: bold; 
       font-size: 14px;
-      margin-top: 4px; 
+      margin-top: 6px; 
     }
-    #status { font-size: 12px; color: var(--primary); margin-top: 6px; font-weight: 600; word-break: break-word; }
+    #status { font-size: 12px; color: var(--primary); margin-top: 8px; font-weight: 600; word-break: break-word; }
 
-    .btn-group { display: flex; gap: 8px; margin-top: 12px; }
+    .btn-group { display: flex; gap: 8px; margin-top: 14px; }
     button.btn-act { 
       width: 100%; 
       color: white; 
       border: none; 
-      padding: 11px; 
+      padding: 12px; 
       border-radius: 8px; 
       font-size: 14px; 
       font-weight: bold; 
@@ -171,7 +170,7 @@
     
     .preview { 
       background: #e5ddd5; 
-      padding: 10px; 
+      padding: 12px; 
       border-radius: 8px; 
       font-family: monospace; 
       font-size: 12px; 
@@ -202,6 +201,7 @@
       border-radius: 8px;
       font-size: 0.95rem;
       outline: none;
+      background: white;
     }
 
     .btn-add {
@@ -226,48 +226,104 @@
       cursor: pointer;
     }
 
-    .inventory-grid { display: flex; flex-direction: column; gap: 12px; }
+    .inventory-grid { display: flex; flex-direction: column; gap: 10px; }
 
     .card-inv {
       background: var(--card-bg);
       border-radius: 12px;
-      padding: 14px 16px;
+      padding: 12px 14px;
       border: 1px solid var(--border);
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
-      display: grid;
-      grid-template-columns: 1.5fr repeat(5, 1fr) 30px;
-      align-items: center;
-      gap: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      position: relative;
     }
 
     .card-inv.priority { border-left: 4px solid var(--warning); background-color: #fffdfa; }
 
-    .card-header-title { font-weight: 700; font-size: 0.95rem; color: var(--secondary); }
-    .label-inv { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; margin-bottom: 2px; }
+    .card-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 6px;
+    }
+
+    .card-header-title { font-weight: 700; font-size: 1rem; color: var(--secondary); }
+    
+    .label-inv { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 2px; }
+
+    .card-grid-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .control-box {
+      background: #f8fafc;
+      padding: 6px 8px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .control-row-inner {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
 
     .input-qty {
-      width: 100%;
-      padding: 6px;
+      width: 48px;
+      padding: 4px;
       border: 1px solid var(--border);
       border-radius: 6px;
       font-weight: 600;
       text-align: center;
+      background: white;
+      font-size: 0.8rem;
     }
 
     .toggle-btn {
-      width: 100%;
-      padding: 6px 2px;
+      flex: 1;
+      padding: 6px 4px;
       border: none;
       border-radius: 6px;
       font-weight: 600;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       cursor: pointer;
     }
 
     .toggle-btn.yes { background-color: #d1fae5; color: #065f46; }
     .toggle-btn.no { background-color: #fee2e2; color: #991b1b; }
 
-    .btn-delete { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.1rem; }
+    .qty-subgroup {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      flex: 1;
+    }
+
+    .btn-delete { 
+      background: #fee2e2; 
+      border: none; 
+      color: var(--danger); 
+      cursor: pointer; 
+      font-size: 0.9rem; 
+      width: 26px; 
+      height: 26px; 
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+    }
 
     /* RESUMEN Y REPORTE */
     .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px; }
@@ -291,18 +347,13 @@
       font-size: 0.85rem; color: #1e293b; resize: vertical; margin-bottom: 14px; line-height: 1.4;
     }
 
-    .btn-copy-rep { background-color: var(--success); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; }
+    .btn-copy-rep { background-color: var(--success); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; }
 
     /* Modales */
-    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; z-index: 100; }
-    .modal { background: white; padding: 20px; border-radius: 12px; width: 90%; max-width: 360px; }
-    .modal input { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; margin: 12px 0; }
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); display: none; align-items: center; justify-content: center; z-index: 100; }
+    .modal { background: white; padding: 20px; border-radius: 14px; width: 90%; max-width: 360px; }
+    .modal input { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; margin: 12px 0; outline: none; }
     .modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
-
-    @media (max-width: 768px) {
-      .card-inv { grid-template-columns: 1fr 1fr; gap: 10px; }
-      .card-header-title { grid-column: span 2; }
-    }
   </style>
 </head>
 <body>
@@ -465,8 +516,8 @@
       <h3 style="margin-bottom: 8px;">Nueva Ubicación</h3>
       <input type="text" id="locationInput" placeholder="Ej: Agencia Valencia">
       <div class="modal-actions">
-        <button style="padding: 8px 12px; background: #ccc; border:none; border-radius:6px;" id="closeModalBtn">Cancelar</button>
-        <button style="padding: 8px 12px; background: var(--secondary); color:white; border:none; border-radius:6px;" id="saveLocationBtn">Guardar</button>
+        <button style="padding: 8px 12px; background: #ccc; border:none; border-radius:6px; cursor:pointer;" id="closeModalBtn">Cancelar</button>
+        <button style="padding: 8px 12px; background: var(--secondary); color:white; border:none; border-radius:6px; cursor:pointer;" id="saveLocationBtn">Guardar</button>
       </div>
     </div>
   </div>
@@ -529,18 +580,19 @@
     }
 
     async function escaneoConIA(event) {
+      const statusDiv = document.getElementById('status');
+      const thumbsDiv = document.getElementById('thumbs');
+      
       if (!API_KEY || !API_KEY.startsWith("AIzaSy")) {
-        alert("Error: Configura una API_KEY válida.");
+        statusDiv.style.color = "red";
+        statusDiv.innerText = "❌ Error: Clave de API no válida.";
         return;
       }
 
       const files = Array.from(event.target.files);
       if (!files.length) return;
 
-      const statusDiv = document.getElementById('status');
-      const thumbsDiv = document.getElementById('thumbs');
       thumbsDiv.innerHTML = '';
-
       files.forEach(file => {
         const img = document.createElement('img');
         img.src = URL.createObjectURL(file);
@@ -570,11 +622,14 @@
           };
 
           const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+          
+          if (!response.ok) throw new Error(`Error en el servidor de IA (Código ${response.status})`);
+
           const data = await response.json();
 
           if (data.error) throw new Error(data.error.message);
 
-          if (data.candidates && data.candidates[0].content.parts[0].text) {
+          if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
             const res = JSON.parse(data.candidates[0].content.parts[0].text);
             if (res.mb && res.mb !== "null") mbsSet.add(res.mb.toString().trim());
             if (res.pedido && res.pedido !== "null") pedidosSet.add(res.pedido.toString().trim());
@@ -586,14 +641,14 @@
             }
           }
         } catch (e) {
-          statusDiv.style.color = "red";
-          statusDiv.innerText = `❌ Error: ${e.message}`;
+          statusDiv.style.color = "var(--danger)";
+          statusDiv.innerText = `❌ Error de análisis: ${e.message}`;
           return;
         }
       }
 
-      statusDiv.style.color = "green";
-      statusDiv.innerText = `✅ ¡Lectura completada!`;
+      statusDiv.style.color = "var(--success)";
+      statusDiv.innerText = `✅ ¡Lectura completada con éxito!`;
 
       if (mbsSet.size > 0) document.getElementById('mb').value = Array.from(mbsSet).join(' / ');
       if (pedidosSet.size > 0) document.getElementById('pedido').value = Array.from(pedidosSet).join(' / ');
@@ -655,26 +710,27 @@ Inspector que recibe: ${recibe}`;
 
     // --- GESTIÓN DE INVENTARIO ---
     const defaultData = [
-      { id: 1, location: "Barquisimeto centro", ver: true, playa: true, qtyPlaya: 10, reja: false, qtyReja: 0, desp: false },
-      { id: 2, location: "Porlamar", ver: true, playa: false, qtyPlaya: 0, reja: true, qtyReja: 5, desp: false },
-      { id: 3, location: "El tigre", ver: true, playa: false, qtyPlaya: 0, reja: false, qtyReja: 0, desp: true }
+      { id: 1, location: "Barquisimeto centro", ver: true, qtyVerPlaya: 1, qtyVerReja: 1, playa: true, qtyPlaya: 1, reja: true, qtyReja: 1, desp: true, qtyDespPlaya: 0, qtyDespReja: 0 }
     ];
 
     let inventory = [];
 
     function saveState() {
       localStorage.setItem('daily_inventory', JSON.stringify(inventory));
-      inventoryRef.set(inventory);
+      inventoryRef.set(inventory).catch(err => console.error("Error al guardar en Firebase:", err));
     }
 
     inventoryRef.on('value', (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        // Asegurar retrocompatibilidad si existían datos anteriores con 'qty'
         inventory = data.map(item => ({
           ...item,
+          qtyVerPlaya: item.qtyVerPlaya !== undefined ? item.qtyVerPlaya : 0,
+          qtyVerReja: item.qtyVerReja !== undefined ? item.qtyVerReja : 0,
           qtyPlaya: item.qtyPlaya !== undefined ? item.qtyPlaya : (item.playa ? (item.qty || 0) : 0),
-          qtyReja: item.qtyReja !== undefined ? item.qtyReja : (item.reja ? (item.qty || 0) : 0)
+          qtyReja: item.qtyReja !== undefined ? item.qtyReja : (item.reja ? (item.qty || 0) : 0),
+          qtyDespPlaya: item.qtyDespPlaya !== undefined ? item.qtyDespPlaya : 0,
+          qtyDespReja: item.qtyDespReja !== undefined ? item.qtyDespReja : 0
         }));
       } else {
         inventory = defaultData;
@@ -689,21 +745,66 @@ Inspector que recibe: ${recibe}`;
       const query = document.getElementById('searchInput').value.toLowerCase().trim();
 
       let filtered = inventory.filter(i => i.location.toLowerCase().includes(query));
-      filtered.sort((a, b) => (b.playa || b.reja ? 1 : 0) - (a.playa || a.reja ? 1 : 0));
+      filtered.sort((a, b) => ((b.playa || b.qtyPlaya > 0 || b.reja || b.qtyReja > 0) ? 1 : 0) - ((a.playa || a.qtyPlaya > 0 || a.reja || a.qtyReja > 0) ? 1 : 0));
 
       filtered.forEach((item) => {
         const realIndex = inventory.findIndex(i => i.id === item.id);
         const card = document.createElement('div');
-        card.className = `card-inv ${item.playa || item.reja ? 'priority' : ''}`;
+        const tieneActividad = item.playa || item.qtyPlaya > 0 || item.reja || item.qtyReja > 0;
+        card.className = `card-inv ${tieneActividad ? 'priority' : ''}`;
+        
         card.innerHTML = `
-          <div><div class="label-inv">Ubicación</div><div class="card-header-title">${item.location}</div></div>
-          <div><div class="label-inv">Verif.</div><button class="toggle-btn ${item.ver ? 'yes' : 'no'}" onclick="toggleStatus(${realIndex}, 'ver')">${item.ver ? 'SÍ' : 'NO'}</button></div>
-          <div><div class="label-inv">Playa</div><button class="toggle-btn ${item.playa ? 'yes' : 'no'}" onclick="toggleStatus(${realIndex}, 'playa')">${item.playa ? 'SÍ' : 'NO'}</button></div>
-          <div><div class="label-inv">Paletas Playa</div><input type="number" class="input-qty" value="${item.qtyPlaya || 0}" min="0" onchange="updateQty(${realIndex}, 'qtyPlaya', this.value)"></div>
-          <div><div class="label-inv">Reja</div><button class="toggle-btn ${item.reja ? 'yes' : 'no'}" onclick="toggleStatus(${realIndex}, 'reja')">${item.reja ? 'SÍ' : 'NO'}</button></div>
-          <div><div class="label-inv">Paletas Reja</div><input type="number" class="input-qty" value="${item.qtyReja || 0}" min="0" onchange="updateQty(${realIndex}, 'qtyReja', this.value)"></div>
-          <div><div class="label-inv">Desp.</div><button class="toggle-btn ${item.desp ? 'yes' : 'no'}" onclick="toggleStatus(${realIndex}, 'desp')">${item.desp ? 'SÍ' : 'NO'}</button></div>
-          <div><button class="btn-delete" onclick="deleteItem(${realIndex})">✕</button></div>
+          <div class="card-top-row">
+            <div>
+              <div class="label-inv">Ubicación</div>
+              <div class="card-header-title">${item.location}</div>
+            </div>
+            <button class="btn-delete" onclick="deleteItem(${realIndex})" title="Eliminar">✕</button>
+          </div>
+
+          <div class="card-grid-controls">
+            <!-- 1. Verificación -->
+            <div class="control-box">
+              <div class="label-inv">Verificación</div>
+              <div class="control-row-inner">
+                <button class="toggle-btn ${item.ver ? 'yes' : 'no'}" onclick="toggleStatus(${realIndex}, 'ver')">${item.ver ? 'SÍ' : 'NO'}</button>
+                <div class="qty-subgroup" title="Playa / Reja">
+                  <span>P:</span><input type="number" class="input-qty" value="${item.qtyVerPlaya || 0}" min="0" onchange="updateQty(${realIndex}, 'qtyVerPlaya', this.value)">
+                  <span>R:</span><input type="number" class="input-qty" value="${item.qtyVerReja || 0}" min="0" onchange="updateQty(${realIndex}, 'qtyVerReja', this.value)">
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. Despacho -->
+            <div class="control-box">
+              <div class="label-inv">Despacho</div>
+              <div class="control-row-inner">
+                <button class="toggle-btn ${item.desp ? 'yes' : 'no'}" onclick="toggleStatus(${realIndex}, 'desp')">${item.desp ? 'SÍ' : 'NO'}</button>
+                <div class="qty-subgroup" title="Playa / Reja">
+                  <span>P:</span><input type="number" class="input-qty" value="${item.qtyDespPlaya || 0}" min="0" onchange="updateDespachoQty(${realIndex}, 'qtyDespPlaya', this.value)">
+                  <span>R:</span><input type="number" class="input-qty" value="${item.qtyDespReja || 0}" min="0" onchange="updateDespachoQty(${realIndex}, 'qtyDespReja', this.value)">
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. Playa -->
+            <div class="control-box">
+              <div class="label-inv">Área Playa</div>
+              <div class="control-row-inner">
+                <button class="toggle-btn ${item.playa ? 'yes' : 'no'}" onclick="toggleStatus(${realIndex}, 'playa')">${item.playa ? 'SÍ' : 'NO'}</button>
+                <input type="number" class="input-qty" style="flex:1;" value="${item.qtyPlaya || 0}" min="0" onchange="updateQty(${realIndex}, 'qtyPlaya', this.value)" title="Pedido Playa">
+              </div>
+            </div>
+
+            <!-- 4. Reja -->
+            <div class="control-box">
+              <div class="label-inv">Jaula / Reja</div>
+              <div class="control-row-inner">
+                <button class="toggle-btn ${item.reja ? 'yes' : 'no'}" onclick="toggleStatus(${realIndex}, 'reja')">${item.reja ? 'SÍ' : 'NO'}</button>
+                <input type="number" class="input-qty" style="flex:1;" value="${item.qtyReja || 0}" min="0" onchange="updateQty(${realIndex}, 'qtyReja', this.value)" title="Pedido Reja">
+              </div>
+            </div>
+          </div>
         `;
         container.appendChild(card);
       });
@@ -729,18 +830,31 @@ Inspector que recibe: ${recibe}`;
       }
 
       item[field] = nuevoEstado;
-
-      if (field === 'desp' && item.desp) { 
-        item.playa = false; 
-        item.reja = false; 
-      }
-
       saveState();
+      renderInv();
     }
 
     function updateQty(index, field, val) { 
       inventory[index][field] = parseInt(val) || 0; 
       saveState(); 
+    }
+
+    function updateDespachoQty(index, field, val) {
+      const item = inventory[index];
+      const nuevoValorDesp = parseInt(val) || 0;
+      const valorAnterior = item[field] || 0;
+      const diferencia = nuevoValorDesp - valorAnterior;
+
+      item[field] = nuevoValorDesp;
+
+      if (field === 'qtyDespPlaya') {
+        item.qtyPlaya = Math.max(0, (item.qtyPlaya || 0) - diferencia);
+      } else if (field === 'qtyDespReja') {
+        item.qtyReja = Math.max(0, (item.qtyReja || 0) - diferencia);
+      }
+
+      saveState();
+      renderInv();
     }
 
     function deleteItem(index) { 
@@ -752,13 +866,25 @@ Inspector que recibe: ${recibe}`;
 
     function resetDailyInventory() {
       if (confirm("¿Deseas reiniciar todos los datos del día?") && prompt("Clave de seguridad:") === "1234") {
-        inventory = inventory.map(i => ({ ...i, qtyPlaya: 0, qtyReja: 0, ver: false, playa: false, reja: false, desp: false }));
+        inventory = inventory.map(i => ({ 
+          ...i, 
+          qtyVerPlaya: 0, 
+          qtyVerReja: 0, 
+          qtyPlaya: 0, 
+          qtyReja: 0, 
+          qtyDespPlaya: 0, 
+          qtyDespReja: 0, 
+          ver: false, 
+          playa: false, 
+          reja: false, 
+          desp: false 
+        }));
         saveState();
         alert("Inventario del día limpiado exitosamente.");
       }
     }
 
-    // --- RESUMEN Y REPORTE SEPARADO ---
+    // --- RESUMEN Y REPORTE CORREGIDOS ---
     function renderSummary() {
       const listDesp = document.getElementById('listDespachadas');
       const listPlaya = document.getElementById('listPlaya');
@@ -770,35 +896,35 @@ Inspector que recibe: ${recibe}`;
       let cDesp = 0, cPend = 0, cTotal = 0;
 
       inventory.forEach(i => {
-        // Total Agencias: Marcadas como Playa, Reja o Despachadas
-        if (i.playa || i.reja || i.desp) {
+        const tienePlaya = i.playa || (i.qtyPlaya && i.qtyPlaya > 0);
+        const tieneReja = i.reja || (i.qtyReja && i.qtyReja > 0);
+
+        if (tienePlaya || tieneReja || i.desp) {
           cTotal++;
         }
 
-        // 1. Tiendas Despachadas
         if (i.desp) {
           cDesp++;
-          const totalPaletas = (i.qtyPlaya || 0) + (i.qtyReja || 0);
-          listDesp.innerHTML += `<li class="summary-item"><span>${i.location} ${totalPaletas > 0 ? `(${totalPaletas} paletas)` : ''}</span><b style="color:var(--success)">DESPACHADA</b></li>`;
+          const totalPedido = (i.qtyDespPlaya || 0) + (i.qtyDespReja || 0);
+          listDesp.innerHTML += `<li class="summary-item"><span>${i.location} ${totalPedido > 0 ? `(P:${i.qtyDespPlaya || 0} / R:${i.qtyDespReja || 0})` : ''}</span><b style="color:var(--success)">DESPACHADA</b></li>`;
         } else {
           let esPendiente = false;
 
-          if (i.playa) {
+          if (tienePlaya) {
             esPendiente = true;
-            listPlaya.innerHTML += `<li class="summary-item"><span>${i.location}</span><b>${i.qtyPlaya || 0} paletas</b></li>`;
+            listPlaya.innerHTML += `<li class="summary-item"><span>${i.location}</span><b>${i.qtyPlaya || 0} Pedido</b></li>`;
           }
 
-          if (i.reja) {
+          if (tieneReja) {
             esPendiente = true;
-            listReja.innerHTML += `<li class="summary-item"><span>${i.location}</span><b>${i.qtyReja || 0} paletas</b></li>`;
+            listReja.innerHTML += `<li class="summary-item"><span>${i.location}</span><b>${i.qtyReja || 0} Pedido</b></li>`;
           }
 
           if (esPendiente) cPend++;
         }
 
-        // 2. Tiendas Verificadas
-        if (i.ver) {
-          listVerif.innerHTML += `<li class="summary-item"><span>${i.location}</span><b style="color:var(--primary)">VERIFICADA</b></li>`;
+        if (i.ver || (i.qtyVerPlaya > 0 || i.qtyVerReja > 0)) {
+          listVerif.innerHTML += `<li class="summary-item"><span>${i.location} (P:${i.qtyVerPlaya || 0} / R:${i.qtyVerReja || 0})</span><b style="color:var(--primary)">VERIFICADA</b></li>`;
         }
       });
 
@@ -813,15 +939,15 @@ Inspector que recibe: ${recibe}`;
       const entrega = document.getElementById('repEntrega').value || 'Gabriel López';
       const recibe = document.getElementById('repRecibe').value || '';
 
-      const playa = inventory.filter(i => i.playa && !i.desp);
-      const reja = inventory.filter(i => i.reja && !i.desp);
+      const playa = inventory.filter(i => (i.playa || (i.qtyPlaya && i.qtyPlaya > 0)) && !i.desp);
+      const reja = inventory.filter(i => (i.reja || (i.qtyReja && i.qtyReja > 0)) && !i.desp);
       const desp = inventory.filter(i => i.desp);
 
       let txt = `📌 *REPORTE DE ENTREGA DE TURNO*\n-----------------------------------\n📅 *Fecha:* ${fecha}\n🔄 *Entrega:* Área de digital al ${turno}\n-----------------------------------\n\n`;
       txt += `🏖️ *DIGITAL EN EL ÁREA DE PLAYA* (${playa.length})\n`;
-      playa.forEach(i => txt += `  ▫️ ${i.location}${i.qtyPlaya > 0 ? ` (${i.qtyPlaya} paletas)` : ''}\n`);
+      playa.forEach(i => txt += `  ▫️ ${i.location}${i.qtyPlaya > 0 ? ` (${i.qtyPlaya} Pedido)` : ''}\n`);
       txt += `\n🔒 *DENTRO DE JAULA / REJA* (${reja.length})\n`;
-      reja.forEach(i => txt += `  ▫️ ${i.location}${i.qtyReja > 0 ? ` (${i.qtyReja} paletas)` : ''}\n`);
+      reja.forEach(i => txt += `  ▫️ ${i.location}${i.qtyReja > 0 ? ` (${i.qtyReja} Pedido)` : ''}\n`);
       txt += `\n🚚 *TIENDAS DESPACHADAS EN TURNO* (${desp.length})\n`;
       desp.forEach(i => txt += `  ▫️ ${i.location}\n`);
       txt += `\n-----------------------------------\n👤 *Inspector que entrega:* ${entrega}\n👤 *Inspector que recibe:* ${recibe}\n`;
@@ -839,7 +965,20 @@ Inspector que recibe: ${recibe}`;
     document.getElementById('saveLocationBtn').onclick = () => {
       const val = document.getElementById('locationInput').value.trim();
       if (val) {
-        inventory.push({ id: Date.now(), location: val, ver: false, playa: false, qtyPlaya: 0, reja: false, qtyReja: 0, desp: false });
+        inventory.push({ 
+          id: Date.now(), 
+          location: val, 
+          ver: false, 
+          qtyVerPlaya: 0, 
+          qtyVerReja: 0, 
+          playa: false, 
+          qtyPlaya: 0, 
+          reja: false, 
+          qtyReja: 0, 
+          desp: false, 
+          qtyDespPlaya: 0, 
+          qtyDespReja: 0 
+        });
         saveState();
         document.getElementById('modalOverlay').style.display = 'none';
         document.getElementById('locationInput').value = '';
