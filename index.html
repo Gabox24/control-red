@@ -45,7 +45,6 @@
       min-height: 100vh; 
     }
 
-    /* Indicador de Estado de Conexión */
     .connection-status {
       text-align: center;
       font-size: 0.75rem;
@@ -57,7 +56,6 @@
     .status-online { background: #d1fae5; color: #065f46; }
     .status-offline { background: #fee2e2; color: #991b1b; }
 
-    /* Navegación por pestañas compacta */
     .app-header {
       max-width: 900px;
       margin: 0 auto 12px auto;
@@ -108,7 +106,7 @@
     .tab-content { display: none; max-width: 900px; margin: 0 auto; }
     .tab-content.active { display: block; }
 
-    /* ESTILOS PESTAÑA DAKA (REGISTRO INDIVIDUAL) */
+    /* PESTAÑA DAKA */
     .daka-card { 
       background: white; 
       padding: 18px; 
@@ -187,7 +185,7 @@
     .thumb-container { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; justify-content: center; }
     .thumb-container img { width: 50px; height: 50px; object-fit: cover; border-radius: 6px; border: 1px solid #ccc; }
 
-    /* ESTILOS PESTAÑAS CONTROL DE INVENTARIO */
+    /* INVENTARIO */
     .top-controls {
       display: flex;
       gap: 10px;
@@ -237,7 +235,7 @@
       border: 1px solid var(--border);
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
       display: grid;
-      grid-template-columns: 1.5fr 1fr repeat(4, 1fr) 30px;
+      grid-template-columns: 1.5fr repeat(5, 1fr) 30px;
       align-items: center;
       gap: 8px;
     }
@@ -271,7 +269,7 @@
 
     .btn-delete { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.1rem; }
 
-    /* ESTILOS RESUMEN Y REPORTE */
+    /* RESUMEN Y REPORTE */
     .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px; }
     .stat-card { background: white; border: 1px solid var(--border); padding: 14px; border-radius: 10px; }
     .stat-card .num { font-size: 1.6rem; font-weight: 700; margin-top: 4px; }
@@ -309,10 +307,8 @@
 </head>
 <body>
 
-  <!-- Estado Firebase -->
   <div id="connectionStatus" class="connection-status status-offline">Conectando a Firebase...</div>
 
-  <!-- Navegación Principal -->
   <header class="app-header">
     <nav class="tabs-nav">
       <button class="tab-btn active" onclick="switchTab('daka')">
@@ -399,7 +395,7 @@
   <div id="tab-resumen" class="tab-content">
     <div class="stats-grid">
       <div class="stat-card">
-        <div class="label-inv">Total Agencias</div>
+        <div class="label-inv">Total Agencias (Playa/Reja/Desp)</div>
         <div class="num" id="statTotal">0</div>
       </div>
       <div class="stat-card" style="color: var(--success)">
@@ -407,7 +403,7 @@
         <div class="num" id="statDesp">0</div>
       </div>
       <div class="stat-card" style="color: var(--warning)">
-        <div class="label-inv">Pendientes</div>
+        <div class="label-inv">Pendientes (Playa / Reja)</div>
         <div class="num" id="statPend">0</div>
       </div>
     </div>
@@ -418,13 +414,18 @@
     </div>
 
     <div class="summary-section">
-      <h3>⏳ Tiendas Pendientes (Playa / Reja)</h3>
-      <ul class="summary-list" id="listPendientes"></ul>
+      <h3>🏖️ Tiendas en Área de Playa</h3>
+      <ul class="summary-list" id="listPlaya"></ul>
     </div>
 
     <div class="summary-section">
-      <h3>📦 En Almacén / Proceso</h3>
-      <ul class="summary-list" id="listEnProceso"></ul>
+      <h3>🔒 Tiendas en Jaula / Reja</h3>
+      <ul class="summary-list" id="listReja"></ul>
+    </div>
+
+    <div class="summary-section">
+      <h3>📦 Tiendas Verificadas</h3>
+      <ul class="summary-list" id="listVerificadas"></ul>
     </div>
   </div>
 
@@ -471,7 +472,7 @@
   </div>
 
   <script>
-    // --- 1. CONFIGURACIÓN E INICIALIZACIÓN DE FIREBASE ---
+    // --- FIREBASE ---
     const firebaseConfig = {
       databaseURL: "https://daka-41dc3-default-rtdb.firebaseio.com",
       projectId: "daka-41dc3",
@@ -485,7 +486,6 @@
 
     const statusElement = document.getElementById('connectionStatus');
     
-    // Indicador de conexión en vivo
     db.ref('.info/connected').on('value', (snap) => {
       if (snap.val() === true) {
         statusElement.innerText = "🟢 Conectado a Realtime Database (daka-41dc3)";
@@ -496,7 +496,7 @@
       }
     });
 
-    // --- 2. CONTROL DE PESTAÑAS ---
+    // --- PESTAÑAS ---
     function switchTab(tabName) {
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
       document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
@@ -510,7 +510,7 @@
       if (tabName === 'reporte') generateTextReport();
     }
 
-    // --- 3. MÓDULO 1: REGISTRO DAKA CON IA ---
+    // --- REGISTRO DAKA CON IA ---
     const API_KEY = "AIzaSyD8I-iHwg-WARJ6wAnIe1QDTTE1Apr3H_s"; 
 
     let mbsSet = new Set();
@@ -653,26 +653,29 @@ Inspector que recibe: ${recibe}`;
 
     document.querySelectorAll('#tab-daka input').forEach(i => i.addEventListener('input', actualizarPreviewDaka));
 
-    // --- 4. MÓDULO 2: GESTIÓN DE INVENTARIOS EN TIEMPO REAL CON FIREBASE ---
+    // --- GESTIÓN DE INVENTARIO ---
     const defaultData = [
-      { id: 1, location: "Barquisimeto centro", qty: 0, ver: true, playa: true, reja: false, desp: false },
-      { id: 2, location: "Porlamar", qty: 0, ver: true, playa: false, reja: true, desp: false },
-      { id: 3, location: "El tigre", qty: 0, ver: true, playa: false, reja: false, desp: true }
+      { id: 1, location: "Barquisimeto centro", ver: true, playa: true, qtyPlaya: 10, reja: false, qtyReja: 0, desp: false },
+      { id: 2, location: "Porlamar", ver: true, playa: false, qtyPlaya: 0, reja: true, qtyReja: 5, desp: false },
+      { id: 3, location: "El tigre", ver: true, playa: false, qtyPlaya: 0, reja: false, qtyReja: 0, desp: true }
     ];
 
     let inventory = [];
 
-    // Guardar cambios en Firebase
     function saveState() {
       localStorage.setItem('daily_inventory', JSON.stringify(inventory));
       inventoryRef.set(inventory);
     }
 
-    // Sincronizar en tiempo real desde Firebase
     inventoryRef.on('value', (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        inventory = data;
+        // Asegurar retrocompatibilidad si existían datos anteriores con 'qty'
+        inventory = data.map(item => ({
+          ...item,
+          qtyPlaya: item.qtyPlaya !== undefined ? item.qtyPlaya : (item.playa ? (item.qty || 0) : 0),
+          qtyReja: item.qtyReja !== undefined ? item.qtyReja : (item.reja ? (item.qty || 0) : 0)
+        }));
       } else {
         inventory = defaultData;
         saveState();
@@ -694,10 +697,11 @@ Inspector que recibe: ${recibe}`;
         card.className = `card-inv ${item.playa || item.reja ? 'priority' : ''}`;
         card.innerHTML = `
           <div><div class="label-inv">Ubicación</div><div class="card-header-title">${item.location}</div></div>
-          <div><div class="label-inv">Paletas</div><input type="number" class="input-qty" value="${item.qty}" min="0" onchange="updateQty(${realIndex}, this.value)"></div>
           <div><div class="label-inv">Verif.</div><button class="toggle-btn ${item.ver ? 'yes' : 'no'}" onclick="toggleStatus(${realIndex}, 'ver')">${item.ver ? 'SÍ' : 'NO'}</button></div>
           <div><div class="label-inv">Playa</div><button class="toggle-btn ${item.playa ? 'yes' : 'no'}" onclick="toggleStatus(${realIndex}, 'playa')">${item.playa ? 'SÍ' : 'NO'}</button></div>
+          <div><div class="label-inv">Paletas Playa</div><input type="number" class="input-qty" value="${item.qtyPlaya || 0}" min="0" onchange="updateQty(${realIndex}, 'qtyPlaya', this.value)"></div>
           <div><div class="label-inv">Reja</div><button class="toggle-btn ${item.reja ? 'yes' : 'no'}" onclick="toggleStatus(${realIndex}, 'reja')">${item.reja ? 'SÍ' : 'NO'}</button></div>
+          <div><div class="label-inv">Paletas Reja</div><input type="number" class="input-qty" value="${item.qtyReja || 0}" min="0" onchange="updateQty(${realIndex}, 'qtyReja', this.value)"></div>
           <div><div class="label-inv">Desp.</div><button class="toggle-btn ${item.desp ? 'yes' : 'no'}" onclick="toggleStatus(${realIndex}, 'desp')">${item.desp ? 'SÍ' : 'NO'}</button></div>
           <div><button class="btn-delete" onclick="deleteItem(${realIndex})">✕</button></div>
         `;
@@ -707,13 +711,35 @@ Inspector que recibe: ${recibe}`;
 
     function toggleStatus(index, field) {
       const item = inventory[index];
-      item[field] = !item[field];
-      if (field === 'desp' && item.desp) { item.playa = false; item.reja = false; }
+      const estadoActual = item[field];
+      const nuevoEstado = !estadoActual;
+
+      if (field === 'ver') {
+        const mensaje = nuevoEstado 
+          ? `¿Estás seguro de que deseas marcar como VERIFICADA la tienda "${item.location}"?`
+          : `¿Estás seguro de que deseas desmarcar VERIFICADA en la tienda "${item.location}"?`;
+        if (!confirm(mensaje)) return;
+      }
+
+      if (field === 'desp') {
+        const mensaje = nuevoEstado 
+          ? `¿Estás seguro de que deseas marcar como DESPACHADA la tienda "${item.location}"?`
+          : `¿Estás seguro de que deseas desmarcar DESPACHADA en la tienda "${item.location}"?`;
+        if (!confirm(mensaje)) return;
+      }
+
+      item[field] = nuevoEstado;
+
+      if (field === 'desp' && item.desp) { 
+        item.playa = false; 
+        item.reja = false; 
+      }
+
       saveState();
     }
 
-    function updateQty(index, val) { 
-      inventory[index].qty = parseInt(val) || 0; 
+    function updateQty(index, field, val) { 
+      inventory[index][field] = parseInt(val) || 0; 
       saveState(); 
     }
 
@@ -726,33 +752,57 @@ Inspector que recibe: ${recibe}`;
 
     function resetDailyInventory() {
       if (confirm("¿Deseas reiniciar todos los datos del día?") && prompt("Clave de seguridad:") === "1234") {
-        inventory = inventory.map(i => ({ ...i, qty: 0, ver: false, playa: false, reja: false, desp: false }));
+        inventory = inventory.map(i => ({ ...i, qtyPlaya: 0, qtyReja: 0, ver: false, playa: false, reja: false, desp: false }));
         saveState();
         alert("Inventario del día limpiado exitosamente.");
       }
     }
 
-    // --- 5. RESUMEN Y REPORTE GENERAL ---
+    // --- RESUMEN Y REPORTE SEPARADO ---
     function renderSummary() {
       const listDesp = document.getElementById('listDespachadas');
-      const listPend = document.getElementById('listPendientes');
-      const listProc = document.getElementById('listEnProceso');
-      listDesp.innerHTML = ''; listPend.innerHTML = ''; listProc.innerHTML = '';
+      const listPlaya = document.getElementById('listPlaya');
+      const listReja = document.getElementById('listReja');
+      const listVerif = document.getElementById('listVerificadas');
+      
+      listDesp.innerHTML = ''; listPlaya.innerHTML = ''; listReja.innerHTML = ''; listVerif.innerHTML = '';
 
-      let cDesp = 0, cPend = 0;
+      let cDesp = 0, cPend = 0, cTotal = 0;
+
       inventory.forEach(i => {
+        // Total Agencias: Marcadas como Playa, Reja o Despachadas
+        if (i.playa || i.reja || i.desp) {
+          cTotal++;
+        }
+
+        // 1. Tiendas Despachadas
         if (i.desp) {
           cDesp++;
-          listDesp.innerHTML += `<li class="summary-item"><span>${i.location} (${i.qty} paletas)</span><b>DESPACHADA</b></li>`;
-        } else if (i.ver && (i.playa || i.reja)) {
-          cPend++;
-          listPend.innerHTML += `<li class="summary-item"><span>${i.location} — ${i.qty} paletas</span><b>${i.playa ? 'PLAYA' : 'REJA'}</b></li>`;
+          const totalPaletas = (i.qtyPlaya || 0) + (i.qtyReja || 0);
+          listDesp.innerHTML += `<li class="summary-item"><span>${i.location} ${totalPaletas > 0 ? `(${totalPaletas} paletas)` : ''}</span><b style="color:var(--success)">DESPACHADA</b></li>`;
         } else {
-          listProc.innerHTML += `<li class="summary-item"><span>${i.location}</span><span>${i.ver ? 'Verificada' : 'Pendiente'}</span></li>`;
+          let esPendiente = false;
+
+          if (i.playa) {
+            esPendiente = true;
+            listPlaya.innerHTML += `<li class="summary-item"><span>${i.location}</span><b>${i.qtyPlaya || 0} paletas</b></li>`;
+          }
+
+          if (i.reja) {
+            esPendiente = true;
+            listReja.innerHTML += `<li class="summary-item"><span>${i.location}</span><b>${i.qtyReja || 0} paletas</b></li>`;
+          }
+
+          if (esPendiente) cPend++;
+        }
+
+        // 2. Tiendas Verificadas
+        if (i.ver) {
+          listVerif.innerHTML += `<li class="summary-item"><span>${i.location}</span><b style="color:var(--primary)">VERIFICADA</b></li>`;
         }
       });
 
-      document.getElementById('statTotal').innerText = inventory.length;
+      document.getElementById('statTotal').innerText = cTotal;
       document.getElementById('statDesp').innerText = cDesp;
       document.getElementById('statPend').innerText = cPend;
     }
@@ -763,15 +813,15 @@ Inspector que recibe: ${recibe}`;
       const entrega = document.getElementById('repEntrega').value || 'Gabriel López';
       const recibe = document.getElementById('repRecibe').value || '';
 
-      const playa = inventory.filter(i => i.ver && i.playa && !i.desp);
-      const reja = inventory.filter(i => i.ver && i.reja && !i.desp);
+      const playa = inventory.filter(i => i.playa && !i.desp);
+      const reja = inventory.filter(i => i.reja && !i.desp);
       const desp = inventory.filter(i => i.desp);
 
       let txt = `📌 *REPORTE DE ENTREGA DE TURNO*\n-----------------------------------\n📅 *Fecha:* ${fecha}\n🔄 *Entrega:* Área de digital al ${turno}\n-----------------------------------\n\n`;
       txt += `🏖️ *DIGITAL EN EL ÁREA DE PLAYA* (${playa.length})\n`;
-      playa.forEach(i => txt += `  ▫️ ${i.location}${i.qty > 0 ? ` (${i.qty} paletas)` : ''}\n`);
+      playa.forEach(i => txt += `  ▫️ ${i.location}${i.qtyPlaya > 0 ? ` (${i.qtyPlaya} paletas)` : ''}\n`);
       txt += `\n🔒 *DENTRO DE JAULA / REJA* (${reja.length})\n`;
-      reja.forEach(i => txt += `  ▫️ ${i.location}${i.qty > 0 ? ` (${i.qty} paletas)` : ''}\n`);
+      reja.forEach(i => txt += `  ▫️ ${i.location}${i.qtyReja > 0 ? ` (${i.qtyReja} paletas)` : ''}\n`);
       txt += `\n🚚 *TIENDAS DESPACHADAS EN TURNO* (${desp.length})\n`;
       desp.forEach(i => txt += `  ▫️ ${i.location}\n`);
       txt += `\n-----------------------------------\n👤 *Inspector que entrega:* ${entrega}\n👤 *Inspector que recibe:* ${recibe}\n`;
@@ -789,7 +839,7 @@ Inspector que recibe: ${recibe}`;
     document.getElementById('saveLocationBtn').onclick = () => {
       const val = document.getElementById('locationInput').value.trim();
       if (val) {
-        inventory.push({ id: Date.now(), location: val, qty: 0, ver: false, playa: false, reja: false, desp: false });
+        inventory.push({ id: Date.now(), location: val, ver: false, playa: false, qtyPlaya: 0, reja: false, qtyReja: 0, desp: false });
         saveState();
         document.getElementById('modalOverlay').style.display = 'none';
         document.getElementById('locationInput').value = '';
