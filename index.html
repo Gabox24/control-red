@@ -4,33 +4,38 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Sistema Integrado de Control DAKA</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <!-- Firebase SDKs versión clásica compatible -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
   <style>
     :root {
-      --bg: #f4f6f9;
+      --bg: #f8fafc;
       --card-bg: #ffffff;
-      --text: #1e293b;
+      --text: #0f172a;
       --text-muted: #64748b;
-      --primary: #075e54;
-      --primary-hover: #054840;
-      --secondary: #2563eb;
+      --primary: #0d9488;
+      --primary-hover: #0f766e;
+      --primary-light: #ccfbf1;
+      --secondary: #3b82f6;
       --success: #10b981;
-      --danger: #ef4444;
+      --danger: #f43f5e;
       --warning: #f59e0b;
-      --border: #e2e8f0;
-      --radius: 12px;
+      --border: #f1f5f9;
+      --border-color: #e2e8f0;
+      --radius: 20px;
+      --radius-sm: 12px;
+      --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+      --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.03);
     }
 
     * { 
       box-sizing: border-box; 
       margin: 0; 
       padding: 0; 
-      font-family: 'Inter', -apple-system, sans-serif; 
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; 
       touch-action: manipulation;
     }
 
@@ -42,7 +47,7 @@
     body { 
       background-color: var(--bg); 
       color: var(--text); 
-      padding: 12px; 
+      padding: 16px; 
       min-height: 100vh; 
     }
 
@@ -50,139 +55,161 @@
       text-align: center;
       font-size: 0.75rem;
       font-weight: 600;
-      padding: 6px;
-      border-radius: 6px;
-      margin-bottom: 8px;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 12px;
+      letter-spacing: -0.01em;
     }
     .status-online { background: #d1fae5; color: #065f46; }
     .status-offline { background: #fee2e2; color: #991b1b; }
 
     .app-header {
       max-width: 900px;
-      margin: 0 auto 12px auto;
-      background: white;
-      padding: 8px 12px;
+      margin: 0 auto 16px auto;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      padding: 8px;
       border-radius: var(--radius);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-color);
     }
 
     .tabs-nav {
       display: flex;
       justify-content: space-around;
-      gap: 4px;
-      border-bottom: 2px solid var(--border);
-      padding-bottom: 4px;
+      gap: 6px;
     }
 
     .tab-btn {
-      background: none;
+      background: transparent;
       border: none;
-      padding: 8px 12px;
+      padding: 10px 14px;
       font-size: 1.1rem;
       font-weight: 600;
       color: var(--text-muted);
       cursor: pointer;
-      border-bottom: 3px solid transparent;
-      border-radius: 8px;
-      transition: all 0.2s ease;
+      border-radius: var(--radius-sm);
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
       display: flex;
       align-items: center;
-      gap: 6px;
+      justify-content: center;
+      gap: 8px;
+      flex: 1;
     }
 
-    .tab-btn .tab-text { display: none; font-size: 0.85rem; }
+    .tab-btn .tab-text { display: none; font-size: 0.85rem; font-weight: 600; }
 
-    .tab-btn:hover { background-color: #f1f5f9; color: var(--primary); }
+    .tab-btn:hover { background-color: var(--border); color: var(--primary); }
     .tab-btn.active {
       color: var(--primary);
-      border-bottom-color: var(--primary);
-      background-color: #eef5f3;
+      background-color: var(--primary-light);
+      box-shadow: 0 2px 8px rgba(13, 148, 136, 0.15);
     }
 
     @media (min-width: 640px) {
       .tab-btn .tab-text { display: inline; }
-      .tab-btn { font-size: 1rem; padding: 10px 16px; }
+      .tab-btn { padding: 12px 18px; }
     }
 
     .tab-content { display: none; max-width: 900px; margin: 0 auto; }
-    .tab-content.active { display: block; }
+    .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
 
     /* PESTAÑA DAKA */
     .daka-card { 
-      background: white; 
-      padding: 20px; 
-      border-radius: 16px; 
+      background: var(--card-bg); 
+      padding: 24px; 
+      border-radius: var(--radius); 
       width: 100%; 
-      max-width: 500px; 
+      max-width: 520px; 
       margin: 0 auto;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.06); 
+      box-shadow: var(--shadow); 
+      border: 1px solid var(--border-color);
     }
 
-    .daka-card h2 { color: var(--primary); margin-bottom: 14px; text-align: center; font-size: 20px; }
-    .daka-card label { font-weight: 600; font-size: 13px; margin-top: 10px; display: block; color: #444; }
+    .daka-card h2 { color: var(--primary); margin-bottom: 18px; text-align: center; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+    .daka-card label { font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.03em; margin-top: 14px; display: block; color: var(--text-muted); }
     
     .daka-card input, .daka-card textarea { 
       width: 100%; 
-      padding: 10px 12px; 
-      margin-top: 4px; 
-      border: 1px solid var(--border); 
-      border-radius: 8px; 
+      padding: 12px 14px; 
+      margin-top: 6px; 
+      border: 1px solid var(--border-color); 
+      border-radius: var(--radius-sm); 
       font-size: 14px;
       outline: none;
+      background: var(--bg);
+      color: var(--text);
+      transition: all 0.2s;
+    }
+    .daka-card input:focus, .daka-card textarea:focus {
+      border-color: var(--primary);
+      background: #ffffff;
+      box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.1);
     }
 
     .ocr-box { 
-      background: #eef5f3; 
-      border: 2px dashed var(--primary); 
-      padding: 14px; 
-      border-radius: 10px; 
+      background: #f0fdf4; 
+      border: 2px dashed #86efac; 
+      padding: 18px; 
+      border-radius: var(--radius); 
       text-align: center; 
-      margin-bottom: 14px; 
+      margin-bottom: 18px; 
     }
     .ocr-box input[type="file"] { display: none; }
     .btn-file { 
       background: var(--primary); 
       color: white; 
-      padding: 10px 16px; 
-      border-radius: 8px; 
+      padding: 10px 18px; 
+      border-radius: var(--radius-sm); 
       cursor: pointer; 
       display: inline-block; 
-      font-weight: bold; 
-      font-size: 14px;
-      margin-top: 6px; 
+      font-weight: 600; 
+      font-size: 13px;
+      margin-top: 8px; 
+      box-shadow: 0 4px 12px rgba(13, 148, 136, 0.2);
+      transition: background 0.2s;
     }
-    #status { font-size: 12px; color: var(--primary); margin-top: 8px; font-weight: 600; word-break: break-word; }
+    .btn-file:hover { background: var(--primary-hover); }
+    #status { font-size: 12px; color: var(--primary); margin-top: 10px; font-weight: 600; word-break: break-word; }
 
-    .btn-group { display: flex; gap: 8px; margin-top: 14px; }
+    .btn-group { display: flex; gap: 10px; margin-top: 18px; }
     button.btn-act { 
       width: 100%; 
       color: white; 
       border: none; 
-      padding: 12px; 
-      border-radius: 8px; 
+      padding: 14px; 
+      border-radius: var(--radius-sm); 
       font-size: 14px; 
-      font-weight: bold; 
+      font-weight: 700; 
       cursor: pointer; 
+      transition: transform 0.1s, opacity 0.2s;
     }
-    .btn-copy-daka { background-color: var(--primary); }
-    .btn-wa { background-color: #25d366; }
-    .btn-clear { background-color: var(--danger); margin-top: 8px; }
+    button.btn-act:active { transform: scale(0.98); }
+    .btn-copy-daka { background-color: var(--primary); box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25); }
+    .btn-wa { background-color: #22c55e; box-shadow: 0 4px 12px rgba(34, 197, 94, 0.25); }
+    .btn-clear { background-color: var(--danger); margin-top: 10px; box-shadow: 0 4px 12px rgba(244, 63, 94, 0.25); }
     
     .preview { 
-      background: #e5ddd5; 
-      padding: 12px; 
-      border-radius: 8px; 
+      background: #f8fafc; 
+      padding: 14px; 
+      border-radius: var(--radius-sm); 
       font-family: monospace; 
       font-size: 12px; 
       white-space: pre-wrap; 
-      margin-top: 12px; 
+      margin-top: 14px; 
       min-height: 100px; 
-      color: #111; 
+      color: var(--text); 
+      border: 1px solid var(--border-color);
       word-break: break-all;
     }
     
-    .thumb-container { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; justify-content: center; }
-    .thumb-container img { width: 50px; height: 50px; object-fit: cover; border-radius: 6px; border: 1px solid #ccc; }
+    .thumb-container { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; justify-content: center; }
+    .thumb-container img { width: 52px; height: 52px; object-fit: cover; border-radius: 8px; border: 2px solid #ffffff; box-shadow: var(--shadow-sm); }
 
     /* INVENTARIO */
     .top-controls {
@@ -190,170 +217,337 @@
       gap: 10px;
       align-items: center;
       flex-wrap: wrap;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
     }
 
     .search-input {
       flex: 1;
       min-width: 180px;
-      padding: 10px 14px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
+      padding: 12px 16px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
       font-size: 0.95rem;
       outline: none;
-      background: white;
+      background: var(--card-bg);
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s;
     }
+    .search-input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.1); }
 
     .btn-add {
       background-color: var(--secondary);
       color: white;
       border: none;
-      border-radius: 8px;
-      padding: 0 16px;
-      height: 42px;
-      font-weight: 600;
+      border-radius: var(--radius);
+      padding: 0 20px;
+      height: 48px;
+      font-weight: 700;
       cursor: pointer;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+      transition: transform 0.1s;
+    }
+    .btn-add:active { transform: scale(0.98); }
+
+    .action-buttons-group {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
     }
 
-    .btn-reset {
-      background-color: #fee2e2;
-      color: var(--danger);
-      border: 1px solid #fecaca;
-      border-radius: 8px;
+    .btn-reset, .btn-import-playa, .btn-import-jaula {
+      border-radius: var(--radius);
       padding: 0 14px;
-      height: 42px;
-      font-weight: 600;
+      height: 44px;
+      font-weight: 700;
       cursor: pointer;
+      font-size: 0.8rem;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .btn-reset {
+      background-color: #fff1f2;
+      color: var(--danger);
+      border: 1px solid #fecdd3;
+    }
+    .btn-import-playa {
+      background-color: #f0fdf4;
+      color: #15803d;
+      border: 1px solid #bbf7d0;
+    }
+    .btn-import-jaula {
+      background-color: #fefce8;
+      color: #a16207;
+      border: 1px solid #fef08a;
     }
 
-    .inventory-grid { display: flex; flex-direction: column; gap: 10px; }
+    .inventory-grid { display: flex; flex-direction: column; gap: 12px; }
 
     .card-inv {
       background: var(--card-bg);
-      border-radius: 12px;
-      padding: 12px 14px;
-      border: 1px solid var(--border);
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+      border-radius: var(--radius);
+      padding: 16px;
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 12px;
       position: relative;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .card-inv:hover {
+      border-color: #cbd5e1;
+      box-shadow: var(--shadow);
+      transform: translateY(-2px);
     }
 
-    .card-inv.priority { border-left: 4px solid var(--warning); background-color: #fffdfa; }
+    .card-inv.priority { border-left: 5px solid var(--warning); background-color: #fffdf9; }
 
     .card-top-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
       border-bottom: 1px solid var(--border);
-      padding-bottom: 6px;
+      padding-bottom: 8px;
     }
 
-    .card-header-title { font-weight: 700; font-size: 1rem; color: var(--secondary); }
+    .card-header-title { 
+      font-weight: 700; 
+      font-size: 1.1rem; 
+      color: var(--secondary); 
+      display: inline-block;
+      letter-spacing: -0.01em;
+    }
     
-    .label-inv { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 2px; }
+    .label-inv { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.03em; margin-bottom: 2px; }
 
-    .card-grid-controls {
+    .status-summary-bar {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(2, 1fr);
       gap: 8px;
+      background: var(--bg);
+      padding: 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
     }
 
-    .control-box {
-      background: #f8fafc;
-      padding: 6px 8px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
+    .status-mini-box {
       display: flex;
       flex-direction: column;
       gap: 4px;
     }
 
-    .control-row-inner {
-      display: flex;
-      gap: 4px;
-      align-items: center;
+    .status-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .badge-yes { background-color: #d1fae5; color: #065f46; }
+    .badge-no { background-color: #fee2e2; color: #991b1b; }
+
+    .card-grid-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
     }
 
-    .input-qty {
-      width: 48px;
-      padding: 4px;
+    .control-box {
+      background: var(--bg);
+      padding: 10px;
+      border-radius: var(--radius-sm);
       border: 1px solid var(--border);
-      border-radius: 6px;
-      font-weight: 600;
-      text-align: center;
-      background: white;
-      font-size: 0.8rem;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
     }
 
     .toggle-btn {
-      flex: 1;
-      padding: 6px 4px;
+      width: 100%;
+      padding: 10px;
       border: none;
-      border-radius: 6px;
-      font-weight: 600;
-      font-size: 0.78rem;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.9rem;
       cursor: pointer;
+      text-align: center;
+      transition: transform 0.1s;
     }
+    .toggle-btn:active { transform: scale(0.97); }
 
     .toggle-btn.yes { background-color: #d1fae5; color: #065f46; }
     .toggle-btn.no { background-color: #fee2e2; color: #991b1b; }
 
-    .qty-subgroup {
-      display: flex;
-      align-items: center;
-      gap: 2px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      color: var(--text-muted);
-      flex: 1;
-    }
-
     .btn-delete { 
-      background: #fee2e2; 
+      background: #ffe4e6; 
       border: none; 
       color: var(--danger); 
       cursor: pointer; 
       font-size: 0.9rem; 
-      width: 26px; 
-      height: 26px; 
+      width: 30px; 
+      height: 30px; 
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: bold;
+      transition: background 0.2s;
     }
+    .btn-delete:hover { background: #fecdd3; }
 
-    /* RESUMEN Y REPORTE */
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px; }
-    .stat-card { background: white; border: 1px solid var(--border); padding: 14px; border-radius: 10px; }
-    .stat-card .num { font-size: 1.6rem; font-weight: 700; margin-top: 4px; }
+    .btn-daka-direct {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: var(--radius-sm);
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      box-shadow: 0 4px 12px rgba(13, 148, 136, 0.2);
+      transition: background 0.2s, transform 0.1s;
+    }
+    .btn-daka-direct:hover { background-color: var(--primary-hover); }
+    .btn-daka-direct:active { transform: scale(0.98); }
+
+    /* RESUMEN Y REPORTE ESTILO TARJETA BLANCA */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 20px; }
+    .stat-card { background: var(--card-bg); border: 1px solid var(--border-color); padding: 18px; border-radius: var(--radius); box-shadow: var(--shadow-sm); }
+    .stat-card .num { font-size: 1.8rem; font-weight: 800; margin-top: 6px; letter-spacing: -0.02em; }
     
-    .summary-section { background: white; border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 12px; }
-    .summary-section h3 { font-size: 1rem; margin-bottom: 10px; }
-    .summary-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
-    .summary-item { padding: 8px 12px; border-radius: 6px; background: var(--bg); display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; }
+    .summary-section { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow-sm); }
+    .summary-section h3 { font-size: 1.1rem; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; color: var(--text); font-weight: 700; letter-spacing: -0.01em; }
+    
+    .summary-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    
+    .summary-item { 
+      padding: 14px 16px; 
+      border-radius: var(--radius-sm); 
+      background: var(--bg); 
+      border: 1px solid var(--border);
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      font-size: 0.95rem; 
+      font-weight: 600;
+      cursor: pointer; 
+      transition: all 0.2s ease;
+    }
+    .summary-item:hover { background: #ffffff; border-color: var(--secondary); box-shadow: var(--shadow-sm); transform: translateY(-1px); }
+    .summary-item .store-name { color: var(--text); }
+    .summary-item .store-badge { font-weight: 700; color: var(--secondary); font-size: 0.85rem; }
 
-    .report-card { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
-    .report-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 14px; }
-    .field-group { display: flex; flex-direction: column; gap: 4px; }
-    .field-group label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); }
-    .field-group input { padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; }
+    .report-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow-sm); }
+    .report-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px; }
+    .field-group { display: flex; flex-direction: column; gap: 6px; }
+    .field-group label { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; }
+    .field-group input { padding: 10px 12px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 0.9rem; background: var(--bg); outline: none; }
+    .field-group input:focus { border-color: var(--primary); background: #ffffff; }
 
     .report-preview {
-      width: 100%; height: 320px; padding: 12px; background: #f8fafc;
-      border: 1px solid var(--border); border-radius: 8px; font-family: monospace;
-      font-size: 0.85rem; color: #1e293b; resize: vertical; margin-bottom: 14px; line-height: 1.4;
+      width: 100%; height: 320px; padding: 14px; background: var(--bg);
+      border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-family: monospace;
+      font-size: 0.85rem; color: var(--text); resize: vertical; margin-bottom: 16px; line-height: 1.5;
     }
 
-    .btn-copy-rep { background-color: var(--success); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; }
+    .btn-copy-rep { background-color: var(--success); color: white; border: none; padding: 14px 20px; border-radius: var(--radius-sm); font-weight: 700; cursor: pointer; width: 100%; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25); transition: opacity 0.2s; }
+    .btn-copy-rep:active { transform: scale(0.98); }
 
-    /* Modales */
-    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); display: none; align-items: center; justify-content: center; z-index: 100; }
-    .modal { background: white; padding: 20px; border-radius: 14px; width: 90%; max-width: 360px; }
-    .modal input { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; margin: 12px 0; outline: none; }
-    .modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
+    /* Modales Estilizados y Suavizados */
+    .modal-overlay { 
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
+      background: rgba(15, 23, 42, 0.4); 
+      backdrop-filter: blur(8px); 
+      display: none; align-items: center; justify-content: center; z-index: 100; 
+      animation: fadeInModal 0.2s ease;
+    }
+    @keyframes fadeInModal {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .modal { 
+      background: var(--card-bg); 
+      padding: 24px; 
+      border-radius: var(--radius); 
+      width: 90%; 
+      max-width: 420px; 
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      border: 1px solid var(--border-color);
+      animation: scaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes scaleUp {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .modal input, .modal textarea { 
+      width: 100%; 
+      padding: 12px; 
+      border: 1px solid var(--border-color); 
+      border-radius: var(--radius-sm); 
+      margin: 10px 0; 
+      outline: none; 
+      background: var(--bg);
+      font-size: 0.95rem;
+    }
+    .modal input:focus, .modal textarea:focus { border-color: var(--primary); background: #ffffff; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+
+    .mb-pill {
+      display: inline-flex;
+      align-items: center;
+      background: var(--primary-light);
+      border: 1px solid #99f6e4;
+      color: #115e59;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      gap: 6px;
+      margin: 4px;
+    }
+
+    /* Estilo para selector de MB interactivo moderno */
+    .mb-selectable {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg);
+      border: 1px solid var(--border-color);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      font-weight: 600;
+      gap: 8px;
+      margin: 6px 0;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .mb-selectable:hover { border-color: #cbd5e1; background: #ffffff; }
+    .mb-selectable.selected {
+      background: #ecfdf5;
+      border-color: #6ee7b7;
+      color: #065f46;
+    }
+    .mb-selectable .check-icon {
+      font-size: 1rem;
+    }
   </style>
 </head>
 <body>
@@ -383,7 +577,7 @@
       <h2>📋 Registro de Entrega DAKA</h2>
 
       <div class="ocr-box">
-        <p style="font-size: 13px; font-weight: bold; margin: 0 0 4px 0; color: #075e54;">🤖 Escanear Etiqueta / Documento DAKA</p>
+        <p style="font-size: 13px; font-weight: 700; margin: 0 0 4px 0; color: var(--primary);">🤖 Escanear Etiqueta / Documento DAKA</p>
         <label for="imageInput" class="btn-file">📷 Tomar / Seleccionar Fotos</label>
         <input type="file" id="imageInput" accept="image/*" multiple onchange="escaneoConIA(event)">
         <div id="status">Esperando fotos para analizar...</div>
@@ -396,8 +590,8 @@
       <label for="puerta">Número de Puerta:</label>
       <input type="text" id="puerta" placeholder="Ej: 3">
 
-      <label for="mb">Código(s) MB:</label>
-      <input type="text" id="mb" placeholder="Ej: MB00073925 / MB00081234">
+      <label for="mb">Código(s) MB / NE:</label>
+      <input type="text" id="mb" placeholder="Ej: MB00073925 / NE 224770">
 
       <label for="pedido">Número(s) de Pedido:</label>
       <input type="text" id="pedido" placeholder="Ej: 90004144 / 90005532">
@@ -412,7 +606,7 @@
       <input type="text" id="nota" placeholder="Ej: 223699 / 224154">
 
       <label for="dr">DR(s):</label>
-      <input type="text" id="dr" placeholder="Ej: 19321 / 19774">
+      <input type="text" id="dr" placeholder="Ej: 19321 / 20352">
 
       <label for="entrega">Inspector que entrega:</label>
       <input type="text" id="entrega" value="Gabriel López">
@@ -436,17 +630,21 @@
     <div class="top-controls">
       <input type="text" id="searchInput" class="search-input" placeholder="🔍 Buscar agencia/ubicación..." oninput="renderInv()">
       <button class="btn-add" id="openModalBtn">+ Nueva</button>
-      <button class="btn-reset" onclick="resetDailyInventory()">🔄 Reiniciar Día</button>
+    </div>
+    <div class="action-buttons-group">
+      <button class="btn-import-playa" onclick="openImportModal('playa')">📥 Playa</button>
+      <button class="btn-import-jaula" onclick="openImportModal('jaula')">📥 Jaula</button>
+      <button class="btn-reset" onclick="resetDailyInventory()">🔄 Reiniciar</button>
     </div>
 
-    <main class="inventory-grid" id="inventoryContainer"></main>
+    <main class="inventory-grid" id="inventoryContainer" style="margin-top: 16px;"></main>
   </div>
 
   <!-- PESTAÑA 3: RESUMEN VISUAL -->
   <div id="tab-resumen" class="tab-content">
     <div class="stats-grid">
       <div class="stat-card">
-        <div class="label-inv">Total Agencias (Playa/Reja/Desp)</div>
+        <div class="label-inv">Total Agencias Registradas</div>
         <div class="num" id="statTotal">0</div>
       </div>
       <div class="stat-card" style="color: var(--success)">
@@ -460,11 +658,6 @@
     </div>
 
     <div class="summary-section">
-      <h3>✅ Tiendas Despachadas</h3>
-      <ul class="summary-list" id="listDespachadas"></ul>
-    </div>
-
-    <div class="summary-section">
       <h3>📦 Tiendas en Área de Playa</h3>
       <ul class="summary-list" id="listPlaya"></ul>
     </div>
@@ -475,7 +668,12 @@
     </div>
 
     <div class="summary-section">
-      <h3>📦 Tiendas Verificadas</h3>
+      <h3>✅ Tiendas Despachadas</h3>
+      <ul class="summary-list" id="listDespachadas"></ul>
+    </div>
+
+    <div class="summary-section">
+      <h3>🔍 Tiendas Verificadas</h3>
       <ul class="summary-list" id="listVerificadas"></ul>
     </div>
   </div>
@@ -483,7 +681,7 @@
   <!-- PESTAÑA 4: REPORTE TURNO -->
   <div id="tab-reporte" class="tab-content">
     <div class="report-card">
-      <h3 style="margin-bottom: 12px;">📋 Reporte de Entrega de Turno</h3>
+      <h3 style="margin-bottom: 16px; font-weight: 700; letter-spacing: -0.01em;">📋 Reporte de Entrega de Turno</h3>
 
       <div class="report-fields">
         <div class="field-group">
@@ -513,17 +711,45 @@
   <!-- Modal Nueva Ubicación -->
   <div class="modal-overlay" id="modalOverlay">
     <div class="modal">
-      <h3 style="margin-bottom: 8px;">Nueva Ubicación</h3>
+      <h3 style="margin-bottom: 8px; font-weight: 700;">Nueva Ubicación</h3>
       <input type="text" id="locationInput" placeholder="Ej: Agencia Valencia">
       <div class="modal-actions">
-        <button style="padding: 8px 12px; background: #ccc; border:none; border-radius:6px; cursor:pointer;" id="closeModalBtn">Cancelar</button>
-        <button style="padding: 8px 12px; background: var(--secondary); color:white; border:none; border-radius:6px; cursor:pointer;" id="saveLocationBtn">Guardar</button>
+        <button style="padding: 10px 16px; background: var(--bg); border:1px solid var(--border-color); color:var(--text); border-radius:var(--radius-sm); font-weight:600; cursor:pointer;" id="closeModalBtn">Cancelar</button>
+        <button style="padding: 10px 16px; background: var(--secondary); color:white; border:none; border-radius:var(--radius-sm); font-weight:600; cursor:pointer;" id="saveLocationBtn">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Importar Texto (Playa / Jaula) -->
+  <div class="modal-overlay" id="importModalOverlay">
+    <div class="modal" style="max-width: 450px;">
+      <h3 id="importModalTitle" style="margin-bottom: 8px; font-weight: 700;">Pegar Inventario</h3>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px; line-height: 1.4;">Pega tu lista (incluyendo MB o NE/Notas con pedidos y DR). Se extraerán automáticamente y se cargarán en este botón.</p>
+      <textarea id="importTextarea" rows="8" placeholder="Agencia San Diego - Pedido 90003884 - MB00074456 - NE 224770 - DR 19321"></textarea>
+      <div class="modal-actions">
+        <button style="padding: 10px 16px; background: var(--bg); border:1px solid var(--border-color); color:var(--text); border-radius:var(--radius-sm); font-weight:600; cursor:pointer;" onclick="closeImportModal()">Cancelar</button>
+        <button style="padding: 10px 16px; background: var(--primary); color:white; border:none; border-radius:var(--radius-sm); font-weight:600; cursor:pointer;" onclick="processImportText()">Aplicar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Detalle / Menú General de la Tienda (Códigos y Acciones) -->
+  <div class="modal-overlay" id="mbModalOverlay">
+    <div class="modal" style="max-width: 450px;">
+      <h3 id="mbModalTitle" style="margin-bottom: 4px; color: var(--secondary); font-weight: 700;">Detalle de Tienda</h3>
+      <p id="mbModalSubtitle" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 14px;"></p>
+      
+      <div id="mbModalContentContainer" style="max-height: 260px; overflow-y: auto; margin-bottom: 14px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 10px; background: var(--bg);">
+      </div>
+
+      <div class="modal-actions" id="mbModalActions">
+        <button style="padding: 10px 16px; background: var(--bg); border:1px solid var(--border-color); color:var(--text); border-radius:var(--radius-sm); font-weight:600; cursor:pointer;" onclick="closeMbModal()">Cerrar</button>
       </div>
     </div>
   </div>
 
   <script>
-    // --- FIREBASE ---
+    // --- FIREBASE CONFIG (SDK Clásico) ---
     const firebaseConfig = {
       databaseURL: "https://daka-41dc3-default-rtdb.firebaseio.com",
       projectId: "daka-41dc3",
@@ -583,12 +809,6 @@
       const statusDiv = document.getElementById('status');
       const thumbsDiv = document.getElementById('thumbs');
       
-      if (!API_KEY || !API_KEY.startsWith("AIzaSy")) {
-        statusDiv.style.color = "red";
-        statusDiv.innerText = "❌ Error: Clave de API no válida.";
-        return;
-      }
-
       const files = Array.from(event.target.files);
       if (!files.length) return;
 
@@ -608,9 +828,9 @@
           const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
 
           const promptText = `Analiza este documento o etiqueta de envío. Extrae solo los siguientes datos:
-          1. "nota": Número de la NOTA DE ENTREGA (ej: "224154").
-          2. "dr": El código DR (ej: "19774").
-          3. "mb": Código que empieza por MB (ej: MB00073925).
+          1. "nota": Número de la NOTA DE ENTREGA (solo los dígitos numéricos).
+          2. "dr": El código DR.
+          3. "mb": Código que empieza por MB o número de Nota de Entrega (NE).
           4. "pedido": Número de pedido.
           5. "destino": Nombre de la Sucursal/Destino.
           6. "r": Código R.
@@ -622,19 +842,18 @@
           };
 
           const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-          
-          if (!response.ok) throw new Error(`Error en el servidor de IA (Código ${response.status})`);
+          if (!response.ok) throw new Error(`Error en IA`);
 
           const data = await response.json();
-
-          if (data.error) throw new Error(data.error.message);
-
           if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
             const res = JSON.parse(data.candidates[0].content.parts[0].text);
             if (res.mb && res.mb !== "null") mbsSet.add(res.mb.toString().trim());
             if (res.pedido && res.pedido !== "null") pedidosSet.add(res.pedido.toString().trim());
             if (res.r && res.r !== "null") rSet.add(res.r.toString().trim());
-            if (res.nota && res.nota !== "null") notasSet.add(res.nota.toString().trim());
+            if (res.nota && res.nota !== "null") {
+              const cleanNota = res.nota.toString().replace(/\D/g, '');
+              if (cleanNota) notasSet.add(cleanNota);
+            }
             if (res.dr && res.dr !== "null") drsSet.add(res.dr.toString().trim());
             if (res.destino && res.destino !== "null" && !document.getElementById('destino').value) {
               document.getElementById('destino').value = res.destino.toString().trim();
@@ -642,7 +861,7 @@
           }
         } catch (e) {
           statusDiv.style.color = "var(--danger)";
-          statusDiv.innerText = `❌ Error de análisis: ${e.message}`;
+          statusDiv.innerText = `❌ Error de análisis`;
           return;
         }
       }
@@ -662,7 +881,7 @@
     function obtenerTextoDaka() {
       const destino = document.getElementById('destino').value || '[DESTINO]';
       const puertaVal = document.getElementById('puerta').value.trim() || '[PUERTA]';
-      const mb = document.getElementById('mb').value || '[MB]';
+      const mb = document.getElementById('mb').value || '[MB / NE]';
       const pedido = document.getElementById('pedido').value || '[PEDIDO]';
       const r = document.getElementById('r').value || '[R]';
       const cajas = document.getElementById('cajas').value.trim() || '[CANTIDAD]';
@@ -676,7 +895,7 @@
 🚪Puerta: ${puertaVal}
 
 🔖 DATOS DEL PRODUCTO
-MB: ${mb}
+MB / NE: ${mb}
 
 📋 DETALLES DEL ENVÍO
 Pedido: ${pedido}
@@ -688,7 +907,6 @@ N°: ${nota}
 DR: ${dr}
 
 👤 INSPECTORES
-
 Inspector que entrega: ${entrega}
 Inspector que recibe: ${recibe}`;
     }
@@ -708,16 +926,106 @@ Inspector que recibe: ${recibe}`;
 
     document.querySelectorAll('#tab-daka input').forEach(i => i.addEventListener('input', actualizarPreviewDaka));
 
+    // --- CARGAR DATOS DESPACHADOS AUTOMÁTICAMENTE AL REGISTRO DAKA CON FILTROS EXACTOS ---
+    function llenarDakaDesdeTienda(realIndex) {
+      const item = inventory[realIndex];
+      if (!item) return;
+
+      let mbsDespachados = [];
+      if (item.checkedMbsDispatch) {
+        Object.keys(item.checkedMbsDispatch).forEach(mb => {
+          if (item.checkedMbsDispatch[mb]) mbsDespachados.push(mb);
+        });
+      }
+
+      if (mbsDespachados.length === 0 && item.desp) {
+        mbsDespachados = [...item.mbsPlaya, ...item.mbsReja];
+      }
+
+      let pedidosList = [];
+      let notasList = [];
+      let drsList = [];
+
+      mbsDespachados.forEach(mb => {
+        if (item.detailsMap && item.detailsMap[mb]) {
+          const det = item.detailsMap[mb];
+          if (det.pedido) pedidosList.push(det.pedido);
+          if (det.nota) {
+            const cleanNota = det.nota.toString().replace(/\D/g, '');
+            if (cleanNota) notasList.push(cleanNota);
+          }
+          if (det.dr) drsList.push(det.dr);
+        }
+      });
+
+      mbsSet.clear();
+      pedidosSet.clear();
+      notasSet.clear();
+      drsSet.clear();
+
+      mbsDespachados.forEach(m => mbsSet.add(m));
+      pedidosList.forEach(p => pedidosSet.add(p));
+      notasList.forEach(n => notasSet.add(n));
+      drsList.forEach(d => drsSet.add(d));
+
+      // ÚNICAMENTE COLOCA EL NOMBRE DE LA AGENCIA Y NADA MÁS EN EL DESTINO (SIN CANTIDAD NI MB)
+      document.getElementById('destino').value = item.location;
+      document.getElementById('mb').value = mbsDespachados.join(' / ');
+      document.getElementById('pedido').value = pedidosList.join(' / ');
+      document.getElementById('nota').value = notasList.join(' / ');
+      document.getElementById('dr').value = drsList.join(' / ');
+      document.getElementById('cajas').value = mbsDespachados.length > 0 ? mbsDespachados.length : '';
+      
+      document.getElementById('puerta').value = '';
+      document.getElementById('r').value = '';
+      document.getElementById('recibe').value = '';
+
+      switchTab('daka');
+      actualizarPreviewDaka();
+    }
+
     // --- GESTIÓN DE INVENTARIO ---
     const defaultData = [
-      { id: 1, location: "Barquisimeto centro", ver: true, qtyVerPlaya: 1, qtyVerReja: 1, playa: true, qtyPlaya: 1, reja: true, qtyReja: 1, desp: true, qtyDespPlaya: 0, qtyDespReja: 0 }
+      { 
+        id: 1, 
+        location: "San Diego", 
+        ver: false, 
+        desp: false, 
+        mbsPlaya: ["MB00074456", "MB00074776", "MB00074435"], 
+        mbsReja: [], 
+        checkedMbsVerify: {}, 
+        checkedMbsDispatch: {},
+        detailsMap: {
+          "MB00074456": { pedido: "90003884", nota: "224770", dr: "19321" },
+          "MB00074776": { pedido: "90003885", nota: "224771", dr: "19322" },
+          "MB00074435": { pedido: "90003886", nota: "224772", dr: "19323" }
+        }
+      },
+      { 
+        id: 2, 
+        location: "Branger", 
+        ver: false, 
+        desp: false, 
+        mbsPlaya: ["MB00074693", "MB00074177"], 
+        mbsReja: [], 
+        checkedMbsVerify: {}, 
+        checkedMbsDispatch: {},
+        detailsMap: {
+          "MB00074693": { pedido: "90004111", nota: "225001", dr: "19400" },
+          "MB00074177": { pedido: "90004112", nota: "225002", dr: "19401" }
+        }
+      }
     ];
 
     let inventory = [];
+    let currentImportType = 'playa';
+    let activeModalItemIndex = null;
+    let modalInteractionMode = 'view';
+    let selectedModalMbs = new Set();
 
     function saveState() {
       localStorage.setItem('daily_inventory', JSON.stringify(inventory));
-      inventoryRef.set(inventory).catch(err => console.error("Error al guardar en Firebase:", err));
+      inventoryRef.set(inventory).catch(err => console.error("Error al guardar:", err));
     }
 
     inventoryRef.on('value', (snapshot) => {
@@ -725,12 +1033,11 @@ Inspector que recibe: ${recibe}`;
       if (data) {
         inventory = data.map(item => ({
           ...item,
-          qtyVerPlaya: item.qtyVerPlaya !== undefined ? item.qtyVerPlaya : 0,
-          qtyVerReja: item.qtyVerReja !== undefined ? item.qtyVerReja : 0,
-          qtyPlaya: item.qtyPlaya !== undefined ? item.qtyPlaya : (item.playa ? (item.qty || 0) : 0),
-          qtyReja: item.qtyReja !== undefined ? item.qtyReja : (item.reja ? (item.qty || 0) : 0),
-          qtyDespPlaya: item.qtyDespPlaya !== undefined ? item.qtyDespPlaya : 0,
-          qtyDespReja: item.qtyDespReja !== undefined ? item.qtyDespReja : 0
+          mbsPlaya: Array.isArray(item.mbsPlaya) ? item.mbsPlaya : (item.mbsPlaya ? [item.mbsPlaya] : []),
+          mbsReja: Array.isArray(item.mbsReja) ? item.mbsReja : (item.mbsReja ? [item.mbsReja] : []),
+          checkedMbsVerify: item.checkedMbsVerify || item.checkedMbs || {},
+          checkedMbsDispatch: item.checkedMbsDispatch || {},
+          detailsMap: item.detailsMap || {}
         }));
       } else {
         inventory = defaultData;
@@ -745,146 +1052,350 @@ Inspector que recibe: ${recibe}`;
       const query = document.getElementById('searchInput').value.toLowerCase().trim();
 
       let filtered = inventory.filter(i => i.location.toLowerCase().includes(query));
-      filtered.sort((a, b) => ((b.playa || b.qtyPlaya > 0 || b.reja || b.qtyReja > 0) ? 1 : 0) - ((a.playa || a.qtyPlaya > 0 || a.reja || a.qtyReja > 0) ? 1 : 0));
+      filtered.sort((a, b) => {
+        const aHas = (a.mbsPlaya.length > 0 || a.mbsReja.length > 0);
+        const bHas = (b.mbsPlaya.length > 0 || b.mbsReja.length > 0);
+        return (bHas ? 1 : 0) - (aHas ? 1 : 0);
+      });
 
       filtered.forEach((item) => {
         const realIndex = inventory.findIndex(i => i.id === item.id);
         const card = document.createElement('div');
-        const tieneActividad = item.playa || item.qtyPlaya > 0 || item.reja || item.qtyReja > 0;
-        card.className = `card-inv ${tieneActividad ? 'priority' : ''}`;
+        const tieneMBs = item.mbsPlaya.length > 0 || item.mbsReja.length > 0;
+        card.className = `card-inv ${tieneMBs ? 'priority' : ''}`;
         
+        card.onclick = (e) => {
+          if (e.target.closest('button') || e.target.closest('.toggle-btn')) return;
+          openMbModal(realIndex, 'general');
+        };
+
+        const cantPlaya = item.mbsPlaya.length;
+        const cantReja = item.mbsReja.length;
+
         card.innerHTML = `
           <div class="card-top-row">
             <div>
               <div class="label-inv">Ubicación</div>
               <div class="card-header-title">${item.location}</div>
             </div>
-            <button class="btn-delete" onclick="deleteItem(${realIndex})" title="Eliminar">✕</button>
+            <button class="btn-delete" onclick="deleteItem(event, ${realIndex})" title="Eliminar">✕</button>
+          </div>
+
+          <div class="status-summary-bar">
+            <div class="status-mini-box">
+              <span class="label-inv">Playa</span>
+              <span class="status-badge ${cantPlaya > 0 ? 'badge-yes' : 'badge-no'}">
+                ${cantPlaya > 0 ? `SÍ (${cantPlaya})` : 'NO'}
+              </span>
+            </div>
+            <div class="status-mini-box">
+              <span class="label-inv">Jaula</span>
+              <span class="status-badge ${cantReja > 0 ? 'badge-yes' : 'badge-no'}">
+                ${cantReja > 0 ? `SÍ (${cantReja})` : 'NO'}
+              </span>
+            </div>
           </div>
 
           <div class="card-grid-controls">
-            <!-- 1. Verificación -->
             <div class="control-box">
-              <div class="label-inv">Verificación</div>
-              <div class="control-row-inner">
-                <button class="toggle-btn ${item.ver ? 'yes' : 'no'}" onclick="toggleStatus(${realIndex}, 'ver')">${item.ver ? 'SÍ' : 'NO'}</button>
-                <div class="qty-subgroup" title="Playa / Reja">
-                  <span>P:</span><input type="number" class="input-qty" value="${item.qtyVerPlaya || 0}" min="0" onchange="updateQty(${realIndex}, 'qtyVerPlaya', this.value)">
-                  <span>R:</span><input type="number" class="input-qty" value="${item.qtyVerReja || 0}" min="0" onchange="updateQty(${realIndex}, 'qtyVerReja', this.value)">
-                </div>
-              </div>
+              <div class="label-inv">Verificado</div>
+              <button class="toggle-btn ${item.ver ? 'yes' : 'no'}" onclick="openMbModal(${realIndex}, 'verify')">${item.ver ? 'SÍ' : 'NO'}</button>
             </div>
 
-            <!-- 2. Despacho -->
             <div class="control-box">
               <div class="label-inv">Despacho</div>
-              <div class="control-row-inner">
-                <button class="toggle-btn ${item.desp ? 'yes' : 'no'}" onclick="toggleStatus(${realIndex}, 'desp')">${item.desp ? 'SÍ' : 'NO'}</button>
-                <div class="qty-subgroup" title="Playa / Reja">
-                  <span>P:</span><input type="number" class="input-qty" value="${item.qtyDespPlaya || 0}" min="0" onchange="updateDespachoQty(${realIndex}, 'qtyDespPlaya', this.value)">
-                  <span>R:</span><input type="number" class="input-qty" value="${item.qtyDespReja || 0}" min="0" onchange="updateDespachoQty(${realIndex}, 'qtyDespReja', this.value)">
-                </div>
-              </div>
-            </div>
-
-            <!-- 3. Playa -->
-            <div class="control-box">
-              <div class="label-inv">Área Playa</div>
-              <div class="control-row-inner">
-                <button class="toggle-btn ${item.playa ? 'yes' : 'no'}" onclick="toggleStatus(${realIndex}, 'playa')">${item.playa ? 'SÍ' : 'NO'}</button>
-                <input type="number" class="input-qty" style="flex:1;" value="${item.qtyPlaya || 0}" min="0" onchange="updateQty(${realIndex}, 'qtyPlaya', this.value)" title="Pedido Playa">
-              </div>
-            </div>
-
-            <!-- 4. Reja -->
-            <div class="control-box">
-              <div class="label-inv">Jaula / Reja</div>
-              <div class="control-row-inner">
-                <button class="toggle-btn ${item.reja ? 'yes' : 'no'}" onclick="toggleStatus(${realIndex}, 'reja')">${item.reja ? 'SÍ' : 'NO'}</button>
-                <input type="number" class="input-qty" style="flex:1;" value="${item.qtyReja || 0}" min="0" onchange="updateQty(${realIndex}, 'qtyReja', this.value)" title="Pedido Reja">
-              </div>
+              <button class="toggle-btn ${item.desp ? 'yes' : 'no'}" onclick="openMbModal(${realIndex}, 'dispatch')">${item.desp ? 'SÍ' : 'NO'}</button>
             </div>
           </div>
+
+          <button class="btn-daka-direct" onclick="event.stopPropagation(); llenarDakaDesdeTienda(${realIndex})">
+            📋 Ir a Registro DAKA (Automático)
+          </button>
         `;
         container.appendChild(card);
       });
     }
 
-    function toggleStatus(index, field) {
-      const item = inventory[index];
-      const estadoActual = item[field];
-      const nuevoEstado = !estadoActual;
-
-      if (field === 'ver') {
-        const mensaje = nuevoEstado 
-          ? `¿Estás seguro de que deseas marcar como VERIFICADA la tienda "${item.location}"?`
-          : `¿Estás seguro de que deseas desmarcar VERIFICADA en la tienda "${item.location}"?`;
-        if (!confirm(mensaje)) return;
-      }
-
-      if (field === 'desp') {
-        const mensaje = nuevoEstado 
-          ? `¿Estás seguro de que deseas marcar como DESPACHADA la tienda "${item.location}"?`
-          : `¿Estás seguro de que deseas desmarcar DESPACHADA en la tienda "${item.location}"?`;
-        if (!confirm(mensaje)) return;
-      }
-
-      item[field] = nuevoEstado;
-      saveState();
-      renderInv();
-    }
-
-    function updateQty(index, field, val) { 
-      inventory[index][field] = parseInt(val) || 0; 
-      saveState(); 
-    }
-
-    function updateDespachoQty(index, field, val) {
-      const item = inventory[index];
-      const nuevoValorDesp = parseInt(val) || 0;
-      const valorAnterior = item[field] || 0;
-      const diferencia = nuevoValorDesp - valorAnterior;
-
-      item[field] = nuevoValorDesp;
-
-      if (field === 'qtyDespPlaya') {
-        item.qtyPlaya = Math.max(0, (item.qtyPlaya || 0) - diferencia);
-      } else if (field === 'qtyDespReja') {
-        item.qtyReja = Math.max(0, (item.qtyReja || 0) - diferencia);
-      }
-
-      saveState();
-      renderInv();
-    }
-
-    function deleteItem(index) { 
-      if (confirm('¿Deseas eliminar esta tienda del inventario?')) { 
+    function deleteItem(e, index) { 
+      e.stopPropagation();
+      if (confirm('¿Deseas eliminar esta tienda?')) { 
         inventory.splice(index, 1); 
         saveState(); 
       } 
     }
 
     function resetDailyInventory() {
-      if (confirm("¿Deseas reiniciar todos los datos del día?") && prompt("Clave de seguridad:") === "1234") {
-        inventory = inventory.map(i => ({ 
-          ...i, 
-          qtyVerPlaya: 0, 
-          qtyVerReja: 0, 
-          qtyPlaya: 0, 
-          qtyReja: 0, 
-          qtyDespPlaya: 0, 
-          qtyDespReja: 0, 
-          ver: false, 
-          playa: false, 
-          reja: false, 
-          desp: false 
-        }));
-        saveState();
-        alert("Inventario del día limpiado exitosamente.");
+      if (confirm("¿Deseas reiniciar todas las tiendas del inventario?")) {
+        const passwordInput = prompt("Introduce la clave para confirmar:");
+        if (passwordInput === "1234") {
+          inventory = inventory.map(i => ({ 
+            ...i, 
+            ver: false, 
+            desp: false, 
+            mbsPlaya: [], 
+            mbsReja: [], 
+            checkedMbsVerify: {}, 
+            checkedMbsDispatch: {},
+            detailsMap: {}
+          }));
+          saveState();
+          renderInv();
+          alert("Todas las tiendas han sido reiniciadas con éxito.");
+        } else if (passwordInput !== null) {
+          alert("Clave incorrecta. No se realizaron cambios.");
+        }
       }
     }
 
-    // --- RESUMEN Y REPORTE CORREGIDOS ---
+    function openMbModal(index, mode = 'general') {
+      activeModalItemIndex = index;
+      modalInteractionMode = mode;
+      selectedModalMbs.clear();
+      const item = inventory[index];
+
+      let sourceMap = (mode === 'dispatch') ? item.checkedMbsDispatch : item.checkedMbsVerify;
+      if (sourceMap && mode !== 'general') {
+        Object.keys(sourceMap).forEach(mb => {
+          if (sourceMap[mb]) {
+            selectedModalMbs.add(mb);
+          }
+        });
+      }
+
+      if (mode === 'dispatch') {
+        document.getElementById('mbModalTitle').innerText = `🚚 Despacho de Códigos`;
+      } else if (mode === 'verify') {
+        document.getElementById('mbModalTitle').innerText = `🔍 Verificación de Códigos`;
+      } else {
+        document.getElementById('mbModalTitle').innerText = `📋 Menú de Tienda: ${item.location}`;
+      }
+
+      renderMbModalList();
+      document.getElementById('mbModalOverlay').style.display = 'flex';
+    }
+
+    function closeMbModal() {
+      document.getElementById('mbModalOverlay').style.display = 'none';
+      saveState();
+      renderInv();
+    }
+
+    function renderMbModalList() {
+      const container = document.getElementById('mbModalContentContainer');
+      const item = inventory[activeModalItemIndex];
+      container.innerHTML = '';
+
+      if (modalInteractionMode === 'general') {
+        document.getElementById('mbModalSubtitle').innerText = `Estado general y listado de códigos asociados.`;
+        let html = `<div style="margin-bottom: 12px; font-size: 0.9rem;">
+          <div><b>Verificado:</b> <span style="color:${item.ver ? 'var(--success)' : 'var(--danger)'}">${item.ver ? 'SÍ' : 'NO'}</span></div>
+          <div><b>Despacho:</b> <span style="color:${item.desp ? 'var(--success)' : 'var(--danger)'}">${item.desp ? 'SÍ' : 'NO'}</span></div>
+        </div>`;
+
+        html += `<div style="font-weight:700; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px;">ÁREA DE PLAYA:</div>`;
+        if (item.mbsPlaya.length === 0) {
+          html += `<div style="font-size:0.8rem; color:var(--text-muted); font-style:italic; margin-bottom:8px;">Sin códigos en playa</div>`;
+        } else {
+          item.mbsPlaya.forEach(mb => {
+            const det = item.detailsMap && item.detailsMap[mb] ? item.detailsMap[mb] : {};
+            html += `<div class="mb-pill">${mb} | Ped: ${det.pedido || 'N/A'} | NE: ${det.nota || 'N/A'} | DR: ${det.dr || 'N/A'}</div>`;
+          });
+        }
+
+        html += `<div style="font-weight:700; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px; margin-top:10px;">JAULA / REJA:</div>`;
+        if (item.mbsReja.length === 0) {
+          html += `<div style="font-size:0.8rem; color:var(--text-muted); font-style:italic; margin-bottom:8px;">Sin códigos en jaula</div>`;
+        } else {
+          item.mbsReja.forEach(mb => {
+            const det = item.detailsMap && item.detailsMap[mb] ? item.detailsMap[mb] : {};
+            html += `<div class="mb-pill" style="background:#fefce8; border-color:#fef08a; color:#a16207;">${mb} | Ped: ${det.pedido || 'N/A'} | NE: ${det.nota || 'N/A'} | DR: ${det.dr || 'N/A'}</div>`;
+          });
+        }
+
+        container.innerHTML = html;
+        document.getElementById('mbModalActions').innerHTML = `
+          <button style="padding: 10px 14px; background: var(--secondary); color:white; border:none; border-radius:var(--radius-sm); font-weight:600; cursor:pointer;" onclick="openMbModal(${activeModalItemIndex}, 'verify')">Ir a Verificado</button>
+          <button style="padding: 10px 14px; background: var(--primary); color:white; border:none; border-radius:var(--radius-sm); font-weight:600; cursor:pointer;" onclick="openMbModal(${activeModalItemIndex}, 'dispatch')">Ir a Despacho</button>
+          <button style="padding: 10px 14px; background: var(--bg); border:1px solid var(--border-color); color:var(--text); border-radius:var(--radius-sm); font-weight:600; cursor:pointer;" onclick="document.getElementById('mbModalOverlay').style.display='none'">Cerrar</button>
+        `;
+        return;
+      }
+
+      let html = `<div style="font-weight:700; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px;">ÁREA DE PLAYA:</div>`;
+      if (item.mbsPlaya.length === 0) {
+        html += `<div style="font-size:0.8rem; color:var(--text-muted); font-style:italic; margin-bottom:8px;">Sin códigos en playa</div>`;
+      } else {
+        html += `<div style="margin-bottom:8px;">`;
+        item.mbsPlaya.forEach((mb) => {
+          const isSelected = selectedModalMbs.has(mb);
+          html += `<div class="mb-selectable ${isSelected ? 'selected' : ''}" onclick="toggleSelectModalMb('${mb}')">
+            <span>${mb}</span>
+            <span class="check-icon">${isSelected ? '✅' : '⬜'}</span>
+          </div>`;
+        });
+        html += `</div>`;
+      }
+
+      html += `<div style="font-weight:700; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px; margin-top:10px;">JAULA / REJA:</div>`;
+      if (item.mbsReja.length === 0) {
+        html += `<div style="font-size:0.8rem; color:var(--text-muted); font-style:italic; margin-bottom:8px;">Sin códigos en jaula</div>`;
+      } else {
+        html += `<div style="margin-bottom:8px;">`;
+        item.mbsReja.forEach((mb) => {
+          const isSelected = selectedModalMbs.has(mb);
+          html += `<div class="mb-selectable ${isSelected ? 'selected' : ''}" onclick="toggleSelectModalMb('${mb}')">
+            <span>${mb}</span>
+            <span class="check-icon">${isSelected ? '✅' : '⬜'}</span>
+          </div>`;
+        });
+        html += `</div>`;
+      }
+
+      container.innerHTML = html;
+      
+      if (modalInteractionMode === 'dispatch') {
+        document.getElementById('mbModalSubtitle').innerText = `Toca los códigos para seleccionarlos (${selectedModalMbs.size} seleccionados)`;
+        document.getElementById('mbModalActions').innerHTML = `
+          <button style="padding: 10px 14px; background: var(--bg); border:1px solid var(--border-color); color:var(--text); border-radius:var(--radius-sm); font-weight:600; cursor:pointer;" onclick="openMbModal(${activeModalItemIndex}, 'general')">Volver</button>
+          <button style="padding: 10px 14px; background: var(--success); color:white; border:none; border-radius:var(--radius-sm); font-weight:700; cursor:pointer;" onclick="confirmDispatchAction()">Guardar Despacho</button>
+        `;
+      } else {
+        document.getElementById('mbModalSubtitle').innerText = `Toca los códigos para seleccionarlos (${selectedModalMbs.size} seleccionados)`;
+        document.getElementById('mbModalActions').innerHTML = `
+          <button style="padding: 10px 12px; background: var(--bg); border:1px solid var(--border-color); color:var(--text); border-radius:var(--radius-sm); font-weight:600; cursor:pointer;" onclick="openMbModal(${activeModalItemIndex}, 'general')">Volver</button>
+          <button style="padding: 10px 12px; background: var(--warning); color:white; border:none; border-radius:var(--radius-sm); font-weight:700; cursor:pointer;" onclick="confirmVerifyAction(false)">Marcar NO</button>
+          <button style="padding: 10px 12px; background: var(--success); color:white; border:none; border-radius:var(--radius-sm); font-weight:700; cursor:pointer;" onclick="confirmVerifyAction(true)">Marcar SÍ</button>
+        `;
+      }
+    }
+
+    function toggleSelectModalMb(mb) {
+      if (selectedModalMbs.has(mb)) {
+        selectedModalMbs.delete(mb);
+      } else {
+        selectedModalMbs.add(mb);
+      }
+      
+      const item = inventory[activeModalItemIndex];
+      if (modalInteractionMode === 'dispatch') {
+        if (!item.checkedMbsDispatch) item.checkedMbsDispatch = {};
+        item.checkedMbsDispatch[mb] = selectedModalMbs.has(mb);
+      } else if (modalInteractionMode === 'verify') {
+        if (!item.checkedMbsVerify) item.checkedMbsVerify = {};
+        item.checkedMbsVerify[mb] = selectedModalMbs.has(mb);
+      }
+
+      renderMbModalList();
+    }
+
+    function confirmDispatchAction() {
+      inventory[activeModalItemIndex].desp = selectedModalMbs.size > 0;
+      document.getElementById('mbModalOverlay').style.display = 'none';
+      saveState();
+      renderInv();
+    }
+
+    function confirmVerifyAction(statusValue) {
+      inventory[activeModalItemIndex].ver = statusValue;
+      document.getElementById('mbModalOverlay').style.display = 'none';
+      saveState();
+      renderInv();
+    }
+
+    function openImportModal(type) {
+      currentImportType = type;
+      if (type === 'playa') {
+        document.getElementById('importModalTitle').innerText = '📥 Importar a Playa';
+      } else {
+        document.getElementById('importModalTitle').innerText = '📥 Importar a Jaula';
+      }
+      document.getElementById('importTextarea').value = '';
+      document.getElementById('importModalOverlay').style.display = 'flex';
+    }
+
+    function closeImportModal() { document.getElementById('importModalOverlay').style.display = 'none'; }
+
+    function processImportText() {
+      const text = document.getElementById('importTextarea').value;
+      if (!text.trim()) return alert("Pega algún texto.");
+
+      const lines = text.split('\n');
+      let updatedCount = 0, addedCount = 0;
+
+      lines.forEach(line => {
+        let cleanLine = line.trim();
+        if (!cleanLine) return;
+
+        let storeName = "", codeFound = "";
+        let pedidoFound = "", notaFound = "", drFound = "";
+
+        const mbMatch = cleanLine.match(/MB\d+/i);
+        const neMatch = cleanLine.match(/NE\s*(\d+)/i);
+        const pedidoMatch = cleanLine.match(/pedido\s*[:#]?\s*(\d+)/i) || cleanLine.match(/9\d{7}/);
+        const notaMatch = cleanLine.match(/nota\s*[:#]?\s*(\d+)/i) || cleanLine.match(/NE\s*(\d+)/i);
+        const drMatch = cleanLine.match(/DR\s*[:#]?\s*(\d+)/i);
+
+        if (mbMatch) {
+          codeFound = mbMatch[0].toUpperCase();
+        } else if (neMatch) {
+          codeFound = neMatch[0].toUpperCase().replace(/\s+/, ' ');
+        }
+
+        if (pedidoMatch) pedidoFound = pedidoMatch[1] || pedidoMatch[0];
+        if (notaMatch) {
+          notaFound = (notaMatch[1] || notaMatch[0]).replace(/\D/g, '');
+        }
+        if (drMatch) drFound = drMatch[1];
+
+        if (cleanLine.includes('-')) {
+          storeName = cleanLine.split('-')[0].trim();
+        } else {
+          storeName = cleanLine.split(' ')[0].trim();
+        }
+
+        storeName = storeName.replace(/^(agencia|sucursal)\s+/i, '').trim();
+        storeName = storeName.charAt(0).toUpperCase() + storeName.slice(1);
+
+        if (storeName) {
+          let item = inventory.find(i => i.location.toLowerCase() === storeName.toLowerCase());
+          if (!item) {
+            item = {
+              id: Date.now() + Math.random(),
+              location: storeName,
+              ver: false,
+              desp: false,
+              mbsPlaya: [],
+              mbsReja: [],
+              checkedMbsVerify: {},
+              checkedMbsDispatch: {},
+              detailsMap: {}
+            };
+            inventory.push(item);
+            addedCount++;
+          } else {
+            updatedCount++;
+          }
+
+          if (codeFound) {
+            if (currentImportType === 'playa' && !item.mbsPlaya.includes(codeFound)) item.mbsPlaya.push(codeFound);
+            if (currentImportType === 'jaula' && !item.mbsReja.includes(codeFound)) item.mbsReja.push(codeFound);
+            
+            if (!item.detailsMap) item.detailsMap = {};
+            item.detailsMap[codeFound] = {
+              pedido: pedidoFound || "",
+              nota: notaFound || "",
+              dr: drFound || ""
+            };
+          }
+        }
+      });
+
+      saveState();
+      closeImportModal();
+      renderInv();
+      alert(`Importado con éxito. Actualizadas/Nuevas procesadas.`);
+    }
+
     function renderSummary() {
       const listDesp = document.getElementById('listDespachadas');
       const listPlaya = document.getElementById('listPlaya');
@@ -896,35 +1407,44 @@ Inspector que recibe: ${recibe}`;
       let cDesp = 0, cPend = 0, cTotal = 0;
 
       inventory.forEach(i => {
-        const tienePlaya = i.playa || (i.qtyPlaya && i.qtyPlaya > 0);
-        const tieneReja = i.reja || (i.qtyReja && i.qtyReja > 0);
+        const realIndex = inventory.findIndex(inv => inv.id === i.id);
+        const tienePlaya = i.mbsPlaya.length > 0;
+        const tieneReja = i.mbsReja.length > 0;
 
-        if (tienePlaya || tieneReja || i.desp) {
-          cTotal++;
-        }
+        if (tienePlaya || tieneReja || i.desp) cTotal++;
 
         if (i.desp) {
           cDesp++;
-          const totalPedido = (i.qtyDespPlaya || 0) + (i.qtyDespReja || 0);
-          listDesp.innerHTML += `<li class="summary-item"><span>${i.location} ${totalPedido > 0 ? `(P:${i.qtyDespPlaya || 0} / R:${i.qtyDespReja || 0})` : ''}</span><b style="color:var(--success)">DESPACHADA</b></li>`;
+          listDesp.innerHTML += `
+            <li class="summary-item" onclick="openMbModal(${realIndex}, 'general')">
+              <span class="store-name">${i.location}</span>
+              <span class="store-badge" style="color:var(--success)">DESPACHADA</span>
+            </li>`;
         } else {
-          let esPendiente = false;
-
-          if (tienePlaya) {
-            esPendiente = true;
-            listPlaya.innerHTML += `<li class="summary-item"><span>${i.location}</span><b>${i.qtyPlaya || 0} Pedido</b></li>`;
+          if (tienePlaya) { 
+            cPend++; 
+            listPlaya.innerHTML += `
+              <li class="summary-item" onclick="openMbModal(${realIndex}, 'general')">
+                <span class="store-name">${i.location}</span>
+                <span class="store-badge">${i.mbsPlaya.length} código(s)</span>
+              </li>`; 
           }
-
-          if (tieneReja) {
-            esPendiente = true;
-            listReja.innerHTML += `<li class="summary-item"><span>${i.location}</span><b>${i.qtyReja || 0} Pedido</b></li>`;
+          if (tieneReja) { 
+            cPend++; 
+            listReja.innerHTML += `
+              <li class="summary-item" onclick="openMbModal(${realIndex}, 'general')">
+                <span class="store-name">${i.location}</span>
+                <span class="store-badge">${i.mbsReja.length} código(s)</span>
+              </li>`; 
           }
-
-          if (esPendiente) cPend++;
         }
 
-        if (i.ver || (i.qtyVerPlaya > 0 || i.qtyVerReja > 0)) {
-          listVerif.innerHTML += `<li class="summary-item"><span>${i.location} (P:${i.qtyVerPlaya || 0} / R:${i.qtyVerReja || 0})</span><b style="color:var(--primary)">VERIFICADA</b></li>`;
+        if (i.ver) {
+          listVerif.innerHTML += `
+            <li class="summary-item" onclick="openMbModal(${realIndex}, 'general')">
+              <span class="store-name">${i.location}</span>
+              <span class="store-badge" style="color:var(--primary)">VERIFICADA</span>
+            </li>`;
         }
       });
 
@@ -935,22 +1455,22 @@ Inspector que recibe: ${recibe}`;
 
     function generateTextReport() {
       const fecha = document.getElementById('repFecha').value || new Date().toLocaleDateString('es-ES');
-      const turno = document.getElementById('repTurno').value || '---';
+      const turno = document.getElementById('repTurno').value || 'tercer turno';
       const entrega = document.getElementById('repEntrega').value || 'Gabriel López';
       const recibe = document.getElementById('repRecibe').value || '';
 
-      const playa = inventory.filter(i => (i.playa || (i.qtyPlaya && i.qtyPlaya > 0)) && !i.desp);
-      const reja = inventory.filter(i => (i.reja || (i.qtyReja && i.qtyReja > 0)) && !i.desp);
+      const playa = inventory.filter(i => i.mbsPlaya.length > 0 && !i.desp);
+      const reja = inventory.filter(i => i.mbsReja.length > 0 && !i.desp);
       const desp = inventory.filter(i => i.desp);
 
-      let txt = `📌 *REPORTE DE ENTREGA DE TURNO*\n-----------------------------------\n📅 *Fecha:* ${fecha}\n🔄 *Entrega:* Área de digital al ${turno}\n-----------------------------------\n\n`;
+      let txt = `📌 *REPORTE DE ENTREGA DE TURNO*\n-----------------------------------\n📅 *Fecha:* ${fecha}\n🔄 *Entrega:* ${turno}\n-----------------------------------\n\n`;
       txt += `📦 *DIGITAL EN EL ÁREA DE PLAYA* (${playa.length})\n`;
-      playa.forEach(i => txt += `  ▫️ ${i.location}${i.qtyPlaya > 0 ? ` (${i.qtyPlaya} Pedido)` : ''}\n`);
+      playa.forEach(i => txt += `  ▫️ ${i.location}\n`);
       txt += `\n🔒 *DENTRO DE JAULA / REJA* (${reja.length})\n`;
-      reja.forEach(i => txt += `  ▫️ ${i.location}${i.qtyReja > 0 ? ` (${i.qtyReja} Pedido)` : ''}\n`);
-      txt += `\n🚚 *TIENDAS DESPACHADAS EN TURNO* (${desp.length})\n`;
+      reja.forEach(i => txt += `  ▫️ ${i.location}\n`);
+      txt += `\n🚚 *TIENDAS DESPACHADAS* (${desp.length})\n`;
       desp.forEach(i => txt += `  ▫️ ${i.location}\n`);
-      txt += `\n-----------------------------------\n👤 *Inspector que entrega:* ${entrega}\n👤 *Inspector que recibe:* ${recibe}\n`;
+      txt += `\n-----------------------------------\n👤 *Entrega:* ${entrega}\n👤 *Recibe:* ${recibe}\n`;
 
       document.getElementById('reportTextarea').value = txt;
     }
@@ -959,35 +1479,21 @@ Inspector que recibe: ${recibe}`;
       navigator.clipboard.writeText(document.getElementById('reportTextarea').value).then(() => alert('¡Reporte copiado!'));
     }
 
-    // Modales
     document.getElementById('openModalBtn').onclick = () => document.getElementById('modalOverlay').style.display = 'flex';
     document.getElementById('closeModalBtn').onclick = () => document.getElementById('modalOverlay').style.display = 'none';
     document.getElementById('saveLocationBtn').onclick = () => {
       const val = document.getElementById('locationInput').value.trim();
       if (val) {
-        inventory.push({ 
-          id: Date.now(), 
-          location: val, 
-          ver: false, 
-          qtyVerPlaya: 0, 
-          qtyVerReja: 0, 
-          playa: false, 
-          qtyPlaya: 0, 
-          reja: false, 
-          qtyReja: 0, 
-          desp: false, 
-          qtyDespPlaya: 0, 
-          qtyDespReja: 0 
-        });
+        inventory.push({ id: Date.now(), location: val, ver: false, desp: false, mbsPlaya: [], mbsReja: [], checkedMbsVerify: {}, checkedMbsDispatch: {}, detailsMap: {} });
         saveState();
         document.getElementById('modalOverlay').style.display = 'none';
         document.getElementById('locationInput').value = '';
       }
     };
 
-    // Inicialización
     document.getElementById('repFecha').value = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit' });
     actualizarPreviewDaka();
   </script>
 </body>
 </html>
+
