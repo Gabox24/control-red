@@ -701,7 +701,7 @@
     </div>
   </div>
 
-  <!-- Modal Escáner de Código de Barras en Vivo (Separando constraints y config) -->
+  <!-- Modal Escáner de Código de Barras en Vivo (Corregido con { facingMode: "environment" }) -->
   <div class="modal-overlay" id="scannerModalOverlay">
     <div class="modal" style="text-align: center;">
       <h3 id="scannerModalTitle" style="margin-bottom: 8px; font-weight: 700;">Escanear Código</h3>
@@ -828,7 +828,7 @@
       "BRANGER", "GUACARA", "MARACAY", "MARACAIBO", "PUNTO FIJO", 
       "BARQUISIMETO", "SAN FELIPE", "SAN CRISTÓBAL", "VALERA", "ACARIGUA", 
       "LECHERÍA", "PUERTO LA CRUZ", "EL TIGRE", "PUERTO ORDAZ", "VALLE DE LA PASCUA", 
-      "PORLAMAR", "MARACAY CENTRO", "BARQUISIMETO CENTRO", "VALENCI"
+      "PORLAMAR", "MARACAY CENTRO", "BARQUISIMETO CENTRO", "VALENCIA"
     ];
 
     const defaultData = tiendasNombres.map((nombre, index) => ({
@@ -961,20 +961,12 @@
     let activeStoreIndexForScan = null;
     let activeCategoryForScan = null;
 
-    // Configuración corregida para evitar el error de múltiples llaves ('cameraldOrConfig')
-    // Separamos las restricciones de la cámara (constraints) y la configuración del visor (scannerConfig)
-    const cameraConstraints = {
-      facingMode: "environment",
-      width: { ideal: 1280 },
-      height: { ideal: 720 }
-    };
+    // CORRECCIÓN CLAVE: Pasamos estrictamente una sola llave por objeto para evitar el error de keys.
+    const cameraConfig = { facingMode: "environment" };
 
     const scannerConfig = { 
       fps: 30, 
-      qrbox: { width: 350, height: 250 },
-      experimentalFeatures: {
-        useBarCodeDetectorIfSupported: true 
-      }
+      qrbox: { width: 350, height: 250 }
     };
 
     function initBarcodeScanner(targetField) {
@@ -990,7 +982,7 @@
           html5QrCode = new Html5Qrcode("reader");
         }
         html5QrCode.start(
-          cameraConstraints,
+          cameraConfig,
           scannerConfig,
           (decodedText) => {
             procesarCodigoDetectado(decodedText, activeTargetField);
@@ -1019,7 +1011,7 @@
           html5QrCode = new Html5Qrcode("reader");
         }
         html5QrCode.start(
-          cameraConstraints,
+          cameraConfig,
           scannerConfig,
           (decodedText) => {
             registrarCodigoEnTienda(storeIndex, category, decodedText);
@@ -1085,7 +1077,7 @@
           html5QrCode = new Html5Qrcode("reader");
         }
         html5QrCode.start(
-          cameraConstraints,
+          cameraConfig,
           scannerConfig,
           (decodedText) => {
             procesarCodigoDetectado(decodedText, null);
