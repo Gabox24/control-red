@@ -964,9 +964,12 @@
     // CORRECCIÓN CLAVE: Pasamos estrictamente una sola llave por objeto para evitar el error de keys.
     const cameraConfig = { facingMode: "environment" };
 
-    const scannerConfig = { 
-      fps: 30, 
-      qrbox: { width: 350, height: 250 }
+    const scannerConfig = {
+      fps: 60,
+      qrbox: { width: 650, height: 400 },
+      aspectRatio: 1.777,
+      disableFlip: true,
+      experimentalFeatures:{useBarCodeDetectorIfSupported:true}
     };
 
     function initBarcodeScanner(targetField) {
