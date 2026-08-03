@@ -984,7 +984,7 @@
           html5QrCode = new Html5Qrcode("reader");
         }
         html5QrCode.start(
-          { facingMode: "environment", advanced: [{ focusMode: "continuous" }] },
+          { facingMode: "environment" },
           scannerConfig,
           (decodedText) => {
             procesarCodigoDetectado(decodedText, activeTargetField);
@@ -1013,7 +1013,7 @@
           html5QrCode = new Html5Qrcode("reader");
         }
         html5QrCode.start(
-          { facingMode: "environment", advanced: [{ focusMode: "continuous" }] },
+          { facingMode: "environment" },
           scannerConfig,
           (decodedText) => {
             registrarCodigoEnTienda(storeIndex, category, decodedText);
@@ -1079,11 +1079,10 @@
           html5QrCode = new Html5Qrcode("reader");
         }
         html5QrCode.start(
-          { facingMode: "environment", advanced: [{ focusMode: "continuous" }] },
+          { facingMode: "environment" },
           scannerConfig,
           (decodedText) => {
             procesarCodigoDetectado(decodedText, null);
-            // Pausa breve de 1.2s para lectura fluida en paletas múltiples sin duplicados seguidos
             html5QrCode.pause();
             setTimeout(() => { 
               if(html5QrCode && html5QrCode.isScanning) html5QrCode.resume(); 
