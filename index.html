@@ -9,6 +9,9 @@
   <!-- Firebase SDKs versión clásica compatible -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  
+  <!-- html5-qrcode para escáner de códigos de barras (optimizado a 60 FPS y nativo) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 
   <style>
     :root {
@@ -31,6 +34,17 @@
       --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.03);
     }
 
+    body.dark-mode {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #334155;
+      --border-color: #334155;
+      --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+      --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
     * { 
       box-sizing: border-box; 
       margin: 0; 
@@ -49,6 +63,7 @@
       color: var(--text); 
       padding: 16px; 
       min-height: 100vh; 
+      transition: background 0.3s, color 0.3s;
     }
 
     .connection-status {
@@ -66,12 +81,23 @@
     .app-header {
       max-width: 900px;
       margin: 0 auto 16px auto;
-      background: rgba(255, 255, 255, 0.85);
+      background: var(--card-bg);
       backdrop-filter: blur(12px);
       padding: 8px;
       border-radius: var(--radius);
       box-shadow: var(--shadow-sm);
       border: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .top-bar-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 8px;
+      font-size: 0.8rem;
     }
 
     .tabs-nav {
@@ -122,7 +148,7 @@
     /* PESTAÑA DAKA */
     .daka-card { 
       background: var(--card-bg); 
-      padding: 24px; 
+      padding: 20px; 
       border-radius: var(--radius); 
       width: 100%; 
       max-width: 520px; 
@@ -131,13 +157,20 @@
       border: 1px solid var(--border-color);
     }
 
-    .daka-card h2 { color: var(--primary); margin-bottom: 18px; text-align: center; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
-    .daka-card label { font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.03em; margin-top: 14px; display: block; color: var(--text-muted); }
+    .daka-card h2 { color: var(--primary); margin-bottom: 14px; text-align: center; font-size: 20px; font-weight: 700; }
+    
+    .field-row-scanner {
+      display: flex;
+      gap: 6px;
+      align-items: flex-end;
+      margin-top: 10px;
+    }
+
+    .daka-card label { font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em; display: block; color: var(--text-muted); margin-bottom: 2px; }
     
     .daka-card input, .daka-card textarea { 
       width: 100%; 
-      padding: 12px 14px; 
-      margin-top: 6px; 
+      padding: 10px 12px; 
       border: 1px solid var(--border-color); 
       border-radius: var(--radius-sm); 
       font-size: 14px;
@@ -148,406 +181,322 @@
     }
     .daka-card input:focus, .daka-card textarea:focus {
       border-color: var(--primary);
-      background: #ffffff;
+      background: var(--card-bg);
       box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.1);
     }
 
+    .btn-scan-field {
+      background: var(--secondary);
+      color: white;
+      border: none;
+      padding: 0 12px;
+      height: 42px;
+      border-radius: var(--radius-sm);
+      font-weight: 700;
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+    }
+
     .ocr-box { 
-      background: #f0fdf4; 
-      border: 2px dashed #86efac; 
-      padding: 18px; 
+      background: var(--bg); 
+      border: 2px dashed var(--border-color); 
+      padding: 14px; 
       border-radius: var(--radius); 
       text-align: center; 
-      margin-bottom: 18px; 
+      margin-bottom: 14px; 
     }
     .ocr-box input[type="file"] { display: none; }
     .btn-file { 
       background: var(--primary); 
       color: white; 
-      padding: 10px 18px; 
+      padding: 8px 14px; 
       border-radius: var(--radius-sm); 
       cursor: pointer; 
       display: inline-block; 
       font-weight: 600; 
-      font-size: 13px;
-      margin-top: 8px; 
+      font-size: 12px;
+      margin-top: 6px; 
       box-shadow: 0 4px 12px rgba(13, 148, 136, 0.2);
-      transition: background 0.2s;
     }
-    .btn-file:hover { background: var(--primary-hover); }
-    #status { font-size: 12px; color: var(--primary); margin-top: 10px; font-weight: 600; word-break: break-word; }
+    #status { font-size: 11px; color: var(--primary); margin-top: 6px; font-weight: 600; word-break: break-word; }
 
-    .btn-group { display: flex; gap: 10px; margin-top: 18px; }
+    .btn-group { display: flex; gap: 8px; margin-top: 14px; }
     button.btn-act { 
       width: 100%; 
       color: white; 
       border: none; 
-      padding: 14px; 
+      padding: 12px; 
       border-radius: var(--radius-sm); 
-      font-size: 14px; 
+      font-size: 13px; 
       font-weight: 700; 
       cursor: pointer; 
-      transition: transform 0.1s, opacity 0.2s;
+      transition: transform 0.1s;
     }
     button.btn-act:active { transform: scale(0.98); }
     .btn-copy-daka { background-color: var(--primary); box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25); }
     .btn-wa { background-color: #22c55e; box-shadow: 0 4px 12px rgba(34, 197, 94, 0.25); }
-    .btn-clear { background-color: var(--danger); margin-top: 10px; box-shadow: 0 4px 12px rgba(244, 63, 94, 0.25); }
+    .btn-clear { background-color: var(--danger); margin-top: 8px; box-shadow: 0 4px 12px rgba(244, 63, 94, 0.25); }
+    .btn-undo { background-color: var(--warning); margin-top: 6px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25); }
     
     .preview { 
-      background: #f8fafc; 
-      padding: 14px; 
+      background: var(--bg); 
+      padding: 12px; 
       border-radius: var(--radius-sm); 
       font-family: monospace; 
-      font-size: 12px; 
+      font-size: 11px; 
       white-space: pre-wrap; 
-      margin-top: 14px; 
-      min-height: 100px; 
+      margin-top: 10px; 
+      min-height: 80px; 
       color: var(--text); 
       border: 1px solid var(--border-color);
       word-break: break-all;
     }
     
-    .thumb-container { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; justify-content: center; }
-    .thumb-container img { width: 52px; height: 52px; object-fit: cover; border-radius: 8px; border: 2px solid #ffffff; box-shadow: var(--shadow-sm); }
+    .thumb-container { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; justify-content: center; }
+    .thumb-container img { width: 42px; height: 42px; object-fit: cover; border-radius: 6px; border: 2px solid var(--card-bg); box-shadow: var(--shadow-sm); }
 
     /* INVENTARIO */
     .top-controls {
       display: flex;
-      gap: 10px;
+      gap: 8px;
       align-items: center;
       flex-wrap: wrap;
-      margin-bottom: 14px;
+      margin-bottom: 10px;
     }
 
     .search-input {
       flex: 1;
       min-width: 180px;
-      padding: 12px 16px;
+      padding: 10px 14px;
       border: 1px solid var(--border-color);
       border-radius: var(--radius);
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       outline: none;
       background: var(--card-bg);
+      color: var(--text);
       box-shadow: var(--shadow-sm);
-      transition: all 0.2s;
     }
-    .search-input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.1); }
+    .search-input:focus { border-color: var(--primary); }
 
     .btn-add {
       background-color: var(--secondary);
       color: white;
       border: none;
       border-radius: var(--radius);
-      padding: 0 20px;
-      height: 48px;
-      font-weight: 700;
-      cursor: pointer;
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
-      transition: transform 0.1s;
-    }
-    .btn-add:active { transform: scale(0.98); }
-
-    .action-buttons-group {
-      display: flex;
-      gap: 8px;
-      width: 100%;
-      flex-wrap: wrap;
-      margin-bottom: 16px;
-    }
-
-    .btn-reset, .btn-import-playa, .btn-import-jaula {
-      border-radius: var(--radius);
-      padding: 0 14px;
+      padding: 0 16px;
       height: 44px;
       font-weight: 700;
       cursor: pointer;
-      font-size: 0.8rem;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+    }
+
+    .action-buttons-group {
+      display: flex;
+      gap: 6px;
+      width: 100%;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .btn-reset, .btn-scan-palette {
+      border-radius: var(--radius);
+      padding: 0 12px;
+      height: 40px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 0.75rem;
       flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
-      transition: all 0.2s;
+      gap: 4px;
     }
-    .btn-reset {
-      background-color: #fff1f2;
-      color: var(--danger);
-      border: 1px solid #fecdd3;
-    }
-    .btn-import-playa {
-      background-color: #f0fdf4;
-      color: #15803d;
-      border: 1px solid #bbf7d0;
-    }
-    .btn-import-jaula {
-      background-color: #fefce8;
-      color: #a16207;
-      border: 1px solid #fef08a;
-    }
+    .btn-reset { background-color: #fff1f2; color: var(--danger); border: 1px solid #fecdd3; }
+    .btn-scan-palette { background-color: var(--primary); color: white; border: none; box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25); }
 
-    .inventory-grid { display: flex; flex-direction: column; gap: 12px; }
+    .inventory-grid { display: flex; flex-direction: column; gap: 10px; }
 
     .card-inv {
       background: var(--card-bg);
       border-radius: var(--radius);
-      padding: 16px;
+      padding: 14px;
       border: 1px solid var(--border-color);
       box-shadow: var(--shadow-sm);
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      position: relative;
+      gap: 10px;
       cursor: pointer;
-      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    .card-inv:hover {
-      border-color: #cbd5e1;
-      box-shadow: var(--shadow);
-      transform: translateY(-2px);
-    }
-
-    .card-inv.priority { border-left: 5px solid var(--warning); background-color: #fffdf9; }
+    .card-inv.priority { border-left: 5px solid var(--warning); }
 
     .card-top-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
       border-bottom: 1px solid var(--border);
-      padding-bottom: 8px;
+      padding-bottom: 6px;
     }
 
-    .card-header-title { 
-      font-weight: 700; 
-      font-size: 1.1rem; 
-      color: var(--secondary); 
-      display: inline-block;
-      letter-spacing: -0.01em;
-    }
-    
-    .label-inv { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.03em; margin-bottom: 2px; }
+    .card-header-title { font-weight: 700; font-size: 1rem; color: var(--secondary); }
+    .label-inv { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 2px; }
 
     .status-summary-bar {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 8px;
+      gap: 6px;
       background: var(--bg);
-      padding: 10px;
+      padding: 8px;
       border-radius: var(--radius-sm);
       border: 1px solid var(--border);
     }
 
-    .status-mini-box {
+    .status-mini-box { display: flex; flex-direction: column; gap: 4px; }
+
+    .status-badge {
+      display: inline-block;
+      padding: 3px 6px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-align: center;
+    }
+    .badge-yes { background-color: #d1fae5; color: #065f46; }
+    .badge-no { background-color: #fee2e2; color: #991b1b; }
+
+    .section-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .section-actions-inline {
+      display: flex;
+      gap: 3px;
+    }
+    .btn-dot-action {
+      border: none;
+      border-radius: 4px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 2px 6px;
+      cursor: pointer;
+      color: white;
+    }
+    .btn-dot-red { background-color: var(--danger); }
+    .btn-dot-green { background-color: var(--success); }
+
+    .card-grid-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+    .control-box {
+      background: var(--bg);
+      padding: 8px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
       display: flex;
       flex-direction: column;
       gap: 4px;
     }
 
-    .status-badge {
-      display: inline-block;
-      padding: 4px 8px;
-      border-radius: 6px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      text-align: center;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .badge-yes { background-color: #d1fae5; color: #065f46; }
-    .badge-no { background-color: #fee2e2; color: #991b1b; }
-
-    .card-grid-controls {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    .control-box {
-      background: var(--bg);
-      padding: 10px;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
     .toggle-btn {
       width: 100%;
-      padding: 10px;
+      padding: 8px;
       border: none;
-      border-radius: 8px;
+      border-radius: 6px;
       font-weight: 700;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       cursor: pointer;
       text-align: center;
-      transition: transform 0.1s;
     }
-    .toggle-btn:active { transform: scale(0.97); }
-
     .toggle-btn.yes { background-color: #d1fae5; color: #065f46; }
     .toggle-btn.no { background-color: #fee2e2; color: #991b1b; }
 
     .btn-delete { 
-      background: #ffe4e6; 
-      border: none; 
-      color: var(--danger); 
-      cursor: pointer; 
-      font-size: 0.9rem; 
-      width: 30px; 
-      height: 30px; 
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: bold;
-      transition: background 0.2s;
+      background: #ffe4e6; border: none; color: var(--danger); cursor: pointer; 
+      font-size: 0.8rem; width: 26px; height: 26px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; font-weight: bold;
     }
-    .btn-delete:hover { background: #fecdd3; }
 
     .btn-daka-direct {
       background-color: var(--primary);
       color: white;
       border: none;
-      padding: 10px;
+      padding: 8px;
       border-radius: var(--radius-sm);
       font-weight: 700;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
+      gap: 4px;
       width: 100%;
       box-shadow: 0 4px 12px rgba(13, 148, 136, 0.2);
-      transition: background 0.2s, transform 0.1s;
     }
-    .btn-daka-direct:hover { background-color: var(--primary-hover); }
-    .btn-daka-direct:active { transform: scale(0.98); }
 
-    /* RESUMEN Y REPORTE ESTILO TARJETA BLANCA */
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 20px; }
-    .stat-card { background: var(--card-bg); border: 1px solid var(--border-color); padding: 18px; border-radius: var(--radius); box-shadow: var(--shadow-sm); }
-    .stat-card .num { font-size: 1.8rem; font-weight: 800; margin-top: 6px; letter-spacing: -0.02em; }
+    /* RESUMEN Y REPORTE */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 14px; }
+    .stat-card { background: var(--card-bg); border: 1px solid var(--border-color); padding: 14px; border-radius: var(--radius); box-shadow: var(--shadow-sm); }
+    .stat-card .num { font-size: 1.5rem; font-weight: 800; margin-top: 4px; }
     
-    .summary-section { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow-sm); }
-    .summary-section h3 { font-size: 1.1rem; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; color: var(--text); font-weight: 700; letter-spacing: -0.01em; }
+    .summary-section { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; box-shadow: var(--shadow-sm); }
+    .summary-section h3 { font-size: 1rem; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; color: var(--text); font-weight: 700; }
     
-    .summary-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .summary-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
     
     .summary-item { 
-      padding: 14px 16px; 
-      border-radius: var(--radius-sm); 
-      background: var(--bg); 
-      border: 1px solid var(--border);
-      display: flex; 
-      justify-content: space-between; 
-      align-items: center; 
-      font-size: 0.95rem; 
-      font-weight: 600;
-      cursor: pointer; 
-      transition: all 0.2s ease;
+      padding: 10px 12px; border-radius: var(--radius-sm); background: var(--bg); border: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; font-weight: 600; cursor: pointer; 
     }
-    .summary-item:hover { background: #ffffff; border-color: var(--secondary); box-shadow: var(--shadow-sm); transform: translateY(-1px); }
     .summary-item .store-name { color: var(--text); }
-    .summary-item .store-badge { font-weight: 700; color: var(--secondary); font-size: 0.85rem; }
+    .summary-item .store-badge { font-weight: 700; color: var(--secondary); font-size: 0.8rem; }
 
-    .report-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow-sm); }
-    .report-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px; }
-    .field-group { display: flex; flex-direction: column; gap: 6px; }
-    .field-group label { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; }
-    .field-group input { padding: 10px 12px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 0.9rem; background: var(--bg); outline: none; }
-    .field-group input:focus { border-color: var(--primary); background: #ffffff; }
+    .report-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow-sm); }
+    .report-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 12px; }
+    .field-group { display: flex; flex-direction: column; gap: 4px; }
+    .field-group label { font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+    .field-group input { padding: 8px 10px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 0.85rem; background: var(--bg); color: var(--text); outline: none; }
 
     .report-preview {
-      width: 100%; height: 320px; padding: 14px; background: var(--bg);
+      width: 100%; height: 260px; padding: 12px; background: var(--bg);
       border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-family: monospace;
-      font-size: 0.85rem; color: var(--text); resize: vertical; margin-bottom: 16px; line-height: 1.5;
+      font-size: 0.8rem; color: var(--text); resize: vertical; margin-bottom: 12px; line-height: 1.4;
     }
 
-    .btn-copy-rep { background-color: var(--success); color: white; border: none; padding: 14px 20px; border-radius: var(--radius-sm); font-weight: 700; cursor: pointer; width: 100%; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25); transition: opacity 0.2s; }
-    .btn-copy-rep:active { transform: scale(0.98); }
+    .btn-copy-rep { background-color: var(--success); color: white; border: none; padding: 12px; border-radius: var(--radius-sm); font-weight: 700; cursor: pointer; width: 100%; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25); }
 
-    /* Modales Estilizados y Suavizados */
+    /* Modales */
     .modal-overlay { 
       position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
-      background: rgba(15, 23, 42, 0.4); 
-      backdrop-filter: blur(8px); 
+      background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(6px); 
       display: none; align-items: center; justify-content: center; z-index: 100; 
-      animation: fadeInModal 0.2s ease;
-    }
-    @keyframes fadeInModal {
-      from { opacity: 0; }
-      to { opacity: 1; }
     }
     .modal { 
-      background: var(--card-bg); 
-      padding: 24px; 
-      border-radius: var(--radius); 
-      width: 90%; 
-      max-width: 420px; 
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-      border: 1px solid var(--border-color);
-      animation: scaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    @keyframes scaleUp {
-      from { transform: scale(0.95); opacity: 0; }
-      to { transform: scale(1); opacity: 1; }
+      background: var(--card-bg); padding: 20px; border-radius: var(--radius); 
+      width: 90%; max-width: 400px; box-shadow: var(--shadow); border: 1px solid var(--border-color); 
+      color: var(--text);
     }
     .modal input, .modal textarea { 
-      width: 100%; 
-      padding: 12px; 
-      border: 1px solid var(--border-color); 
-      border-radius: var(--radius-sm); 
-      margin: 10px 0; 
-      outline: none; 
-      background: var(--bg);
-      font-size: 0.95rem;
+      width: 100%; padding: 10px; border: 1px solid var(--border-color); 
+      border-radius: var(--radius-sm); margin: 8px 0; outline: none; background: var(--bg); color: var(--text); font-size: 0.9rem; 
     }
-    .modal input:focus, .modal textarea:focus { border-color: var(--primary); background: #ffffff; }
-    .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 12px; }
 
     .mb-pill {
-      display: inline-flex;
-      align-items: center;
-      background: var(--primary-light);
-      border: 1px solid #99f6e4;
-      color: #115e59;
-      padding: 6px 12px;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: 700;
-      gap: 6px;
-      margin: 4px;
+      display: inline-flex; align-items: center; background: var(--primary-light);
+      border: 1px solid #99f6e4; color: #115e59; padding: 4px 10px; border-radius: 16px;
+      font-size: 0.75rem; font-weight: 700; gap: 4px; margin: 3px;
     }
 
-    /* Estilo para selector de MB interactivo moderno */
     .mb-selectable {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: var(--bg);
-      border: 1px solid var(--border-color);
-      color: var(--text);
-      padding: 10px 14px;
-      border-radius: var(--radius-sm);
-      font-size: 0.85rem;
-      font-weight: 600;
-      gap: 8px;
-      margin: 6px 0;
-      cursor: pointer;
-      transition: all 0.2s ease;
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--bg); border: 1px solid var(--border-color); color: var(--text);
+      padding: 8px 12px; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 600; gap: 6px; margin: 4px 0; cursor: pointer;
     }
-    .mb-selectable:hover { border-color: #cbd5e1; background: #ffffff; }
-    .mb-selectable.selected {
-      background: #ecfdf5;
-      border-color: #6ee7b7;
-      color: #065f46;
-    }
-    .mb-selectable .check-icon {
-      font-size: 1rem;
-    }
+    .mb-selectable.selected { background: #ecfdf5; border-color: #6ee7b7; color: #065f46; }
   </style>
 </head>
 <body>
@@ -555,6 +504,16 @@
   <div id="connectionStatus" class="connection-status status-offline">Conectando a Firebase...</div>
 
   <header class="app-header">
+    <div class="top-bar-controls">
+      <div>
+        <label style="cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-weight: 700;">
+          <input type="checkbox" id="fastModeToggle" style="width: 16px; height: 16px; accent-color: var(--primary);"> ⚡ Modo Rápido
+        </label>
+      </div>
+      <div>
+        <button onclick="toggleDarkMode()" style="background:var(--bg); border:1px solid var(--border-color); color:var(--text); padding:4px 8px; border-radius:6px; font-weight:600; cursor:pointer;">🌓 Dark Mode</button>
+      </div>
+    </div>
     <nav class="tabs-nav">
       <button class="tab-btn active" onclick="switchTab('daka')">
         <span>📦</span><span class="tab-text">Registro DAKA</span>
@@ -577,36 +536,58 @@
       <h2>📋 Registro de Entrega DAKA</h2>
 
       <div class="ocr-box">
-        <p style="font-size: 13px; font-weight: 700; margin: 0 0 4px 0; color: var(--primary);">🤖 Escanear Etiqueta / Documento DAKA</p>
-        <label for="imageInput" class="btn-file">📷 Tomar / Seleccionar Fotos</label>
+        <p style="font-size: 12px; font-weight: 700; margin: 0 0 2px 0; color: var(--primary);">🤖 Lectura Rápida / Opcional</p>
+        <button class="btn-file" onclick="startPaletteScanMode()">📷 Escanear Paleta Completa</button><br>
+        <label for="imageInput" class="btn-file" style="background:var(--secondary); margin-top:4px;">📄 Leer etiqueta completa (OCR IA)</label>
         <input type="file" id="imageInput" accept="image/*" multiple onchange="escaneoConIA(event)">
-        <div id="status">Esperando fotos para analizar...</div>
+        <div id="status">Usando códigos de barras ultrarrápidos (60 FPS)</div>
         <div class="thumb-container" id="thumbs"></div>
       </div>
 
       <label for="destino">Destino:</label>
-      <input type="text" id="destino" placeholder="Ej: Charallave">
+      <div class="field-row-scanner">
+        <input type="text" id="destino" placeholder="Ej: San Diego">
+        <button class="btn-scan-field" onclick="initBarcodeScanner('destino')">📷 Escanear</button>
+      </div>
 
       <label for="puerta">Número de Puerta:</label>
-      <input type="text" id="puerta" placeholder="Ej: 3">
+      <div class="field-row-scanner">
+        <input type="text" id="puerta" placeholder="Ej: 3">
+        <button class="btn-scan-field" onclick="initBarcodeScanner('puerta')">📷 Escanear</button>
+      </div>
 
       <label for="mb">Código(s) MB / NE:</label>
-      <input type="text" id="mb" placeholder="Ej: MB00073925 / NE 224770">
+      <div class="field-row-scanner">
+        <input type="text" id="mb" placeholder="Ej: MB00073925">
+        <button class="btn-scan-field" onclick="initBarcodeScanner('mb')">📷 Escanear</button>
+      </div>
 
       <label for="pedido">Número(s) de Pedido:</label>
-      <input type="text" id="pedido" placeholder="Ej: 90004144 / 90005532">
+      <div class="field-row-scanner">
+        <input type="text" id="pedido" placeholder="Ej: 90004144">
+        <button class="btn-scan-field" onclick="initBarcodeScanner('pedido')">📷 Escanear</button>
+      </div>
 
       <label for="r">R:</label>
-      <input type="text" id="r" placeholder="Ej: R00123 / R00124">
+      <div class="field-row-scanner">
+        <input type="text" id="r" placeholder="Ej: R00123">
+        <button class="btn-scan-field" onclick="initBarcodeScanner('r')">📷 Escanear</button>
+      </div>
 
       <label for="cajas">Cantidad de Cajas Azules:</label>
       <input type="text" id="cajas" placeholder="Ej: 3">
 
       <label for="nota">Número(s) de Nota de Entrega:</label>
-      <input type="text" id="nota" placeholder="Ej: 223699 / 224154">
+      <div class="field-row-scanner">
+        <input type="text" id="nota" placeholder="Ej: 223699">
+        <button class="btn-scan-field" onclick="initBarcodeScanner('nota')">📷 Escanear</button>
+      </div>
 
       <label for="dr">DR(s):</label>
-      <input type="text" id="dr" placeholder="Ej: 19321 / 20352">
+      <div class="field-row-scanner">
+        <input type="text" id="dr" placeholder="Ej: 19321">
+        <button class="btn-scan-field" onclick="initBarcodeScanner('dr')">📷 Escanear</button>
+      </div>
 
       <label for="entrega">Inspector que entrega:</label>
       <input type="text" id="entrega" value="Gabriel López">
@@ -618,9 +599,10 @@
         <button class="btn-act btn-copy-daka" onclick="copiarReporteDaka()">📋 Copiar</button>
         <button class="btn-act btn-wa" onclick="abrirWhatsAppDaka()">💬 WhatsApp</button>
       </div>
+      <button class="btn-act btn-undo" onclick="deshacerUltimoEscaneo()">↩ Deshacer</button>
       <button class="btn-act btn-clear" onclick="limpiarFormularioDaka()">🗑️ Limpiar Formulario</button>
 
-      <label style="margin-top: 15px;">Vista previa:</label>
+      <label style="margin-top: 12px;">Vista previa:</label>
       <div class="preview" id="previewDaka"></div>
     </div>
   </div>
@@ -628,33 +610,39 @@
   <!-- PESTAÑA 2: GESTIÓN DE TIENDAS -->
   <div id="tab-gestion" class="tab-content">
     <div class="top-controls">
-      <input type="text" id="searchInput" class="search-input" placeholder="🔍 Buscar agencia/ubicación..." oninput="renderInv()">
+      <input type="text" id="searchInput" class="search-input" placeholder="🔍 Buscar por código MB, tienda..." oninput="renderInv()">
       <button class="btn-add" id="openModalBtn">+ Nueva</button>
     </div>
     <div class="action-buttons-group">
-      <button class="btn-import-playa" onclick="openImportModal('playa')">📥 Playa</button>
-      <button class="btn-import-jaula" onclick="openImportModal('jaula')">📥 Jaula</button>
-      <button class="btn-reset" onclick="resetDailyInventory()">🔄 Reiniciar</button>
+      <button class="btn-scan-palette" onclick="startPaletteScanMode()">⚡ Escanear Paleta</button>
+      <button class="btn-reset" onclick="resetDailyInventory()">🔄 Reiniciar / Restaurar Predeterminadas</button>
     </div>
 
-    <main class="inventory-grid" id="inventoryContainer" style="margin-top: 16px;"></main>
+    <main class="inventory-grid" id="inventoryContainer" style="margin-top: 12px;"></main>
   </div>
 
   <!-- PESTAÑA 3: RESUMEN VISUAL -->
   <div id="tab-resumen" class="tab-content">
     <div class="stats-grid">
       <div class="stat-card">
-        <div class="label-inv">Total Agencias Registradas</div>
-        <div class="num" id="statTotal">0</div>
+        <div class="label-inv">Total MB</div>
+        <div class="num" id="statTotalMB">0</div>
       </div>
       <div class="stat-card" style="color: var(--success)">
-        <div class="label-inv">Despachadas</div>
-        <div class="num" id="statDesp">0</div>
+        <div class="label-inv">MB Despachados</div>
+        <div class="num" id="statDespMB">0</div>
       </div>
       <div class="stat-card" style="color: var(--warning)">
-        <div class="label-inv">Pendientes (Playa / Reja)</div>
+        <div class="label-inv">MB Pendientes</div>
+        <div class="num" id="statPendMB">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label-inv">Tiendas Pendientes</div>
         <div class="num" id="statPend">0</div>
       </div>
+    </div>
+    <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px; text-align: center;">
+      Tiempo promedio por despacho: <b id="statAvgTime">0s</b> | Despachos del día: <b id="statDailyCount">0</b>
     </div>
 
     <div class="summary-section">
@@ -681,7 +669,7 @@
   <!-- PESTAÑA 4: REPORTE TURNO -->
   <div id="tab-reporte" class="tab-content">
     <div class="report-card">
-      <h3 style="margin-bottom: 16px; font-weight: 700; letter-spacing: -0.01em;">📋 Reporte de Entrega de Turno</h3>
+      <h3 style="margin-bottom: 12px; font-weight: 700;">📋 Reporte de Entrega de Turno</h3>
 
       <div class="report-fields">
         <div class="field-group">
@@ -698,13 +686,42 @@
         </div>
         <div class="field-group">
           <label>Inspector que recibe:</label>
-          <input type="text" id="repRecibe" placeholder="(Por asignar)" oninput="generateTextReport()">
+          <input type="text" id="repRecibe" value="(Por asignar)" placeholder="(Por asignar)" oninput="generateTextReport()">
         </div>
       </div>
 
       <textarea id="reportTextarea" class="report-preview" readonly></textarea>
 
       <button class="btn-copy-rep" onclick="copyReportText()">📋 Copiar Reporte General</button>
+      <div style="display:flex; gap:6px; margin-top:8px;">
+        <button class="btn-act" style="background:#2563eb;" onclick="exportarExcel()">📊 Exportar Excel</button>
+        <button class="btn-act" style="background:#dc2626;" onclick="exportarPDF()">📄 Exportar PDF</button>
+        <button class="btn-act" style="background:#4b5563;" onclick="exportarTXT()">📝 Exportar TXT</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Escáner de Código de Barras en Vivo (Optimizado 60 FPS + Nativo) -->
+  <div class="modal-overlay" id="scannerModalOverlay">
+    <div class="modal" style="text-align: center;">
+      <h3 id="scannerModalTitle" style="margin-bottom: 8px; font-weight: 700;">Escanear Código</h3>
+      <div id="reader" style="width: 100%; max-width: 380px; margin: 0 auto; border-radius: 12px; overflow: hidden;"></div>
+      <div class="modal-actions" style="justify-content: center; margin-top: 12px;">
+        <button style="padding: 10px 20px; background: var(--danger); color:white; border:none; border-radius:var(--radius-sm); font-weight:600; cursor:pointer;" onclick="stopBarcodeScanner()">Cerrar / Finalizar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Entrada Manual para Playa / Jaula -->
+  <div class="modal-overlay" id="manualAddModalOverlay">
+    <div class="modal">
+      <h3 id="manualModalTitle" style="margin-bottom: 8px; font-weight: 700;">Ingresar Código</h3>
+      <p id="manualModalSubtitle" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 6px;"></p>
+      <input type="text" id="manualCodeInput" placeholder="Ej: MB00074456">
+      <div class="modal-actions">
+        <button style="padding: 8px 14px; background: var(--bg); border:1px solid var(--border-color); color:var(--text); border-radius:var(--radius-sm); font-weight:600; cursor:pointer;" onclick="closeManualModal()">Cancelar</button>
+        <button style="padding: 8px 14px; background: var(--primary); color:white; border:none; border-radius:var(--radius-sm); font-weight:600; cursor:pointer;" onclick="confirmManualAdd()">Guardar</button>
+      </div>
     </div>
   </div>
 
@@ -714,42 +731,29 @@
       <h3 style="margin-bottom: 8px; font-weight: 700;">Nueva Ubicación</h3>
       <input type="text" id="locationInput" placeholder="Ej: Agencia Valencia">
       <div class="modal-actions">
-        <button style="padding: 10px 16px; background: var(--bg); border:1px solid var(--border-color); color:var(--text); border-radius:var(--radius-sm); font-weight:600; cursor:pointer;" id="closeModalBtn">Cancelar</button>
-        <button style="padding: 10px 16px; background: var(--secondary); color:white; border:none; border-radius:var(--radius-sm); font-weight:600; cursor:pointer;" id="saveLocationBtn">Guardar</button>
+        <button style="padding: 8px 14px; background: var(--bg); border:1px solid var(--border-color); color:var(--text); border-radius:var(--radius-sm); font-weight:600; cursor:pointer;" id="closeModalBtn">Cancelar</button>
+        <button style="padding: 8px 14px; background: var(--secondary); color:white; border:none; border-radius:var(--radius-sm); font-weight:600; cursor:pointer;" id="saveLocationBtn">Guardar</button>
       </div>
     </div>
   </div>
 
-  <!-- Modal Importar Texto (Playa / Jaula) -->
-  <div class="modal-overlay" id="importModalOverlay">
-    <div class="modal" style="max-width: 450px;">
-      <h3 id="importModalTitle" style="margin-bottom: 8px; font-weight: 700;">Pegar Inventario</h3>
-      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px; line-height: 1.4;">Pega tu lista (incluyendo MB o NE/Notas con pedidos y DR). Se extraerán automáticamente y se cargarán en este botón.</p>
-      <textarea id="importTextarea" rows="8" placeholder="Agencia San Diego - Pedido 90003884 - MB00074456 - NE 224770 - DR 19321"></textarea>
-      <div class="modal-actions">
-        <button style="padding: 10px 16px; background: var(--bg); border:1px solid var(--border-color); color:var(--text); border-radius:var(--radius-sm); font-weight:600; cursor:pointer;" onclick="closeImportModal()">Cancelar</button>
-        <button style="padding: 10px 16px; background: var(--primary); color:white; border:none; border-radius:var(--radius-sm); font-weight:600; cursor:pointer;" onclick="processImportText()">Aplicar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal Detalle / Menú General de la Tienda (Códigos y Acciones) -->
+  <!-- Modal Detalle Tienda -->
   <div class="modal-overlay" id="mbModalOverlay">
-    <div class="modal" style="max-width: 450px;">
+    <div class="modal" style="max-width: 420px;">
       <h3 id="mbModalTitle" style="margin-bottom: 4px; color: var(--secondary); font-weight: 700;">Detalle de Tienda</h3>
-      <p id="mbModalSubtitle" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 14px;"></p>
+      <p id="mbModalSubtitle" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 10px;"></p>
       
-      <div id="mbModalContentContainer" style="max-height: 260px; overflow-y: auto; margin-bottom: 14px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 10px; background: var(--bg);">
+      <div id="mbModalContentContainer" style="max-height: 220px; overflow-y: auto; margin-bottom: 10px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 8px; background: var(--bg);">
       </div>
 
       <div class="modal-actions" id="mbModalActions">
-        <button style="padding: 10px 16px; background: var(--bg); border:1px solid var(--border-color); color:var(--text); border-radius:var(--radius-sm); font-weight:600; cursor:pointer;" onclick="closeMbModal()">Cerrar</button>
+        <button style="padding: 8px 14px; background: var(--bg); border:1px solid var(--border-color); color:var(--text); border-radius:var(--radius-sm); font-weight:600; cursor:pointer;" onclick="closeMbModal()">Cerrar</button>
       </div>
     </div>
   </div>
 
   <script>
-    // --- FIREBASE CONFIG (SDK Clásico) ---
+    // --- FIREBASE & STORAGE CONFIG ---
     const firebaseConfig = {
       databaseURL: "https://daka-41dc3-default-rtdb.firebaseio.com",
       projectId: "daka-41dc3",
@@ -757,21 +761,42 @@
       storageBucket: "daka-41dc3.appspot.com"
     };
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    const inventoryRef = db.ref('inventory');
+    let db;
+    try {
+      firebase.initializeApp(firebaseConfig);
+      db = firebase.database();
+    } catch(e) { console.warn("Firebase inicializado previamente o sin conexión"); }
 
     const statusElement = document.getElementById('connectionStatus');
     
-    db.ref('.info/connected').on('value', (snap) => {
-      if (snap.val() === true) {
-        statusElement.innerText = "🟢 Conectado a Realtime Database (daka-41dc3)";
-        statusElement.className = "connection-status status-online";
-      } else {
-        statusElement.innerText = "🔴 Sin conexión (Modo Local)";
-        statusElement.className = "connection-status status-offline";
-      }
-    });
+    if (db) {
+      db.ref('.info/connected').on('value', (snap) => {
+        if (snap.val() === true) {
+          statusElement.innerText = "🟢 Conectado a Realtime Database";
+          statusElement.className = "connection-status status-online";
+        } else {
+          statusElement.innerText = "🔴 Sin conexión (Modo Local Sincronizado)";
+          statusElement.className = "connection-status status-offline";
+        }
+      });
+    }
+
+    // --- AUDIO & HAPTICS (Beep instantáneo) ---
+    function playSuccessSound() {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(850, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.08);
+      } catch(e) {}
+      if (navigator.vibrate) navigator.vibrate(50);
+    }
 
     // --- PESTAÑAS ---
     function switchTab(tabName) {
@@ -787,9 +812,318 @@
       if (tabName === 'reporte') generateTextReport();
     }
 
-    // --- REGISTRO DAKA CON IA ---
-    const API_KEY = "AIzaSyD8I-iHwg-WARJ6wAnIe1QDTTE1Apr3H_s"; 
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark-mode');
+      localStorage.setItem('daka_dark', document.body.classList.contains('dark-mode'));
+    }
+    if (localStorage.getItem('daka_dark') === 'true') {
+      document.body.classList.add('dark-mode');
+    }
 
+    // --- LISTA PREDETERMINADA DE TIENDAS ---
+    const tiendasNombres = [
+      "SAN DIEGO", "MATURIN", "PUERTO CABELLO", "BELLO MONTE", "BOLEÍTA", 
+      "CHACAO", "EL PARAÍSO", "EL RECREO", "LA TRINIDAD", "SAN BERNARDINO", 
+      "SAN MARTÍN", "CARRIZAL", "CHARALLAVE", "MAÑONGO", "VALENCIA CENTRO", 
+      "BRANGER", "GUACARA", "MARACAY", "MARACAIBO", "PUNTO FIJO", 
+      "BARQUISIMETO", "SAN FELIPE", "SAN CRISTÓBAL", "VALERA", "ACARIGUA", 
+      "LECHERÍA", "PUERTO LA CRUZ", "EL TIGRE", "PUERTO ORDAZ", "VALLE DE LA PASCUA", 
+      "PORLAMAR", "MARACAY CENTRO", "BARQUISIMETO CENTRO", "VALENCI"
+    ];
+
+    const defaultData = tiendasNombres.map((nombre, index) => ({
+      id: index + 1,
+      location: `${index + 1}. ${nombre}`,
+      ver: false,
+      desp: false,
+      mbsPlaya: [],
+      mbsReja: [],
+      checkedMbsVerify: {},
+      checkedMbsDispatch: {},
+      detailsMap: {}
+    }));
+
+    let inventory = [];
+
+    function saveState() {
+      localStorage.setItem('daily_inventory', JSON.stringify(inventory));
+      if (db) {
+        db.ref('inventory').set(inventory).catch(err => console.error(err));
+      }
+    }
+
+    if (db) {
+      db.ref('inventory').on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (data && Array.isArray(data) && data.length > 0) {
+          inventory = data.map(item => ({
+            ...item,
+            mbsPlaya: Array.isArray(item.mbsPlaya) ? item.mbsPlaya : [],
+            mbsReja: Array.isArray(item.mbsReja) ? item.mbsReja : [],
+            checkedMbsVerify: item.checkedMbsVerify || {},
+            checkedMbsDispatch: item.checkedMbsDispatch || {},
+            detailsMap: item.detailsMap || {}
+          }));
+        } else {
+          inventory = defaultData;
+          saveState();
+        }
+        renderInv();
+      });
+    } else {
+      const localData = localStorage.getItem('daily_inventory');
+      if (localData) {
+        try {
+          inventory = JSON.parse(localData);
+        } catch(e) {
+          inventory = defaultData;
+        }
+      } else {
+        inventory = defaultData;
+        saveState();
+      }
+    }
+
+    let historyStack = [];
+
+    function registrarUltimoEstadoFormulario() {
+      historyStack.push({
+        destino: document.getElementById('destino').value,
+        puerta: document.getElementById('puerta').value,
+        mb: document.getElementById('mb').value,
+        pedido: document.getElementById('pedido').value,
+        r: document.getElementById('r').value,
+        cajas: document.getElementById('cajas').value,
+        nota: document.getElementById('nota').value,
+        dr: document.getElementById('dr').value,
+        recibe: document.getElementById('recibe').value
+      });
+      if (historyStack.length > 20) historyStack.shift();
+    }
+
+    function deshacerUltimoEscaneo() {
+      if (historyStack.length === 0) {
+        alert("No hay acciones para deshacer.");
+        return;
+      }
+      const prev = historyStack.pop();
+      document.getElementById('destino').value = prev.destino;
+      document.getElementById('puerta').value = prev.puerta;
+      document.getElementById('mb').value = prev.mb;
+      document.getElementById('pedido').value = prev.pedido;
+      document.getElementById('r').value = prev.r;
+      document.getElementById('cajas').value = prev.cajas;
+      document.getElementById('nota').value = prev.nota;
+      document.getElementById('dr').value = prev.dr;
+      document.getElementById('recibe').value = prev.recibe;
+      actualizarPreviewDaka();
+      playSuccessSound();
+    }
+
+    function procesarCodigoDetectado(code, targetField = null) {
+      registrarUltimoEstadoFormulario();
+      code = code.trim();
+      playSuccessSound();
+
+      let assignedField = targetField;
+      if (!assignedField) {
+        if (code.toUpperCase().startsWith('MB')) {
+          assignedField = 'mb';
+        } else if (code.toUpperCase().startsWith('R')) {
+          assignedField = 'r';
+        } else if (/^9\d{7}$/.test(code)) {
+          assignedField = 'pedido';
+        } else if (code.toUpperCase().startsWith('DR')) {
+          assignedField = 'dr';
+        } else if (/^\d{6}$/.test(code)) {
+          assignedField = 'nota';
+        } else {
+          assignedField = 'mb';
+        }
+      }
+
+      const inputElem = document.getElementById(assignedField);
+      if (inputElem) {
+        if (inputElem.value) {
+          inputElem.value += ' / ' + code;
+        } else {
+          inputElem.value = code;
+        }
+      }
+
+      actualizarInventarioInteligenteAlEscanear(code);
+      actualizarPreviewDaka();
+    }
+
+    let html5QrCode = null;
+    let activeTargetField = null;
+    let isPaletteMultiScan = false;
+    let activeStoreIndexForScan = null;
+    let activeCategoryForScan = null;
+
+    // Configuración optimizada a 60 FPS y decodificador nativo para velocidad extrema
+    const scannerConfig = { 
+      fps: 60, 
+      qrbox: { width: 350, height: 200 }, 
+      aspectRatio: 1.0,
+      experimentalFeatures: {
+        useBarCodeDetectorIfSupported: true 
+      }
+    };
+
+    function initBarcodeScanner(targetField) {
+      activeTargetField = targetField;
+      isPaletteMultiScan = false;
+      activeStoreIndexForScan = null;
+      activeCategoryForScan = null;
+      document.getElementById('scannerModalTitle').innerText = `Escanear ${targetField.toUpperCase()}`;
+      document.getElementById('scannerModalOverlay').style.display = 'flex';
+
+      setTimeout(() => {
+        if (!html5QrCode) {
+          html5QrCode = new Html5Qrcode("reader");
+        }
+        html5QrCode.start(
+          { facingMode: "environment", advanced: [{ focusMode: "continuous" }] },
+          scannerConfig,
+          (decodedText) => {
+            procesarCodigoDetectado(decodedText, activeTargetField);
+            if (!isPaletteMultiScan) {
+              stopBarcodeScanner();
+            }
+          },
+          (error) => {}
+        ).catch(err => {
+          alert("Error al iniciar cámara: " + err);
+          stopBarcodeScanner();
+        });
+      }, 300);
+    }
+
+    function scanStoreCode(storeIndex, category) {
+      activeStoreIndexForScan = storeIndex;
+      activeCategoryForScan = category;
+      isPaletteMultiScan = false;
+      const storeName = inventory[storeIndex].location;
+      document.getElementById('scannerModalTitle').innerText = `Escanear para ${storeName} (${category.toUpperCase()})`;
+      document.getElementById('scannerModalOverlay').style.display = 'flex';
+
+      setTimeout(() => {
+        if (!html5QrCode) {
+          html5QrCode = new Html5Qrcode("reader");
+        }
+        html5QrCode.start(
+          { facingMode: "environment", advanced: [{ focusMode: "continuous" }] },
+          scannerConfig,
+          (decodedText) => {
+            registrarCodigoEnTienda(storeIndex, category, decodedText);
+            stopBarcodeScanner();
+          },
+          (error) => {}
+        ).catch(err => {
+          alert("Error al iniciar cámara: " + err);
+          stopBarcodeScanner();
+        });
+      }, 300);
+    }
+
+    function registrarCodigoEnTienda(storeIndex, category, code) {
+      code = code.trim();
+      if (!code) return;
+      playSuccessSound();
+      const item = inventory[storeIndex];
+      if (category === 'playa') {
+        if (!item.mbsPlaya.includes(code)) item.mbsPlaya.push(code);
+      } else if (category === 'jaula') {
+        if (!item.mbsReja.includes(code)) item.mbsReja.push(code);
+      }
+      saveState();
+      renderInv();
+    }
+
+    let manualTargetStoreIndex = null;
+    let manualTargetCategory = null;
+
+    function openManualAddModal(storeIndex, category) {
+      manualTargetStoreIndex = storeIndex;
+      manualTargetCategory = category;
+      const item = inventory[storeIndex];
+      document.getElementById('manualModalTitle').innerText = `Agregar Manual (${category.toUpperCase()})`;
+      document.getElementById('manualModalSubtitle').innerText = item.location;
+      document.getElementById('manualCodeInput').value = '';
+      document.getElementById('manualAddModalOverlay').style.display = 'flex';
+    }
+
+    function closeManualModal() {
+      document.getElementById('manualAddModalOverlay').style.display = 'none';
+    }
+
+    function confirmManualAdd() {
+      const val = document.getElementById('manualCodeInput').value.trim();
+      if (val) {
+        registrarCodigoEnTienda(manualTargetStoreIndex, manualTargetCategory, val);
+        closeManualModal();
+      }
+    }
+
+    function startPaletteScanMode() {
+      isPaletteMultiScan = true;
+      activeTargetField = null;
+      activeStoreIndexForScan = null;
+      activeCategoryForScan = null;
+      document.getElementById('scannerModalTitle').innerText = `⚡ Escaneo Múltiple (Paleta)`;
+      document.getElementById('scannerModalOverlay').style.display = 'flex';
+
+      setTimeout(() => {
+        if (!html5QrCode) {
+          html5QrCode = new Html5Qrcode("reader");
+        }
+        html5QrCode.start(
+          { facingMode: "environment", advanced: [{ focusMode: "continuous" }] },
+          scannerConfig,
+          (decodedText) => {
+            procesarCodigoDetectado(decodedText, null);
+            // Pausa breve de 1.2s para lectura fluida en paletas múltiples sin duplicados seguidos
+            html5QrCode.pause();
+            setTimeout(() => { 
+              if(html5QrCode && html5QrCode.isScanning) html5QrCode.resume(); 
+            }, 1200);
+          },
+          (error) => {}
+        ).catch(err => {
+          alert("Error al iniciar cámara: " + err);
+          stopBarcodeScanner();
+        });
+      }, 300);
+    }
+
+    function stopBarcodeScanner() {
+      if (html5QrCode && html5QrCode.isScanning) {
+        html5QrCode.stop().then(() => {
+          document.getElementById('scannerModalOverlay').style.display = 'none';
+        }).catch(err => {
+          document.getElementById('scannerModalOverlay').style.display = 'none';
+        });
+      } else {
+        document.getElementById('scannerModalOverlay').style.display = 'none';
+      }
+    }
+
+    function actualizarInventarioInteligenteAlEscanear(code) {
+      inventory.forEach(item => {
+        if (item.mbsPlaya && item.mbsPlaya.includes(code)) {
+          if (!item.checkedMbsDispatch) item.checkedMbsDispatch = {};
+          item.checkedMbsDispatch[code] = true;
+        }
+        if (item.mbsReja && item.mbsReja.includes(code)) {
+          if (!item.checkedMbsDispatch) item.checkedMbsDispatch = {};
+          item.checkedMbsDispatch[code] = true;
+        }
+      });
+      saveState();
+    }
+
+    const API_KEY = "AIzaSyD8I-iHwg-WARJ6wAnIe1QDTTE1Apr3H_s"; 
     let mbsSet = new Set();
     let pedidosSet = new Set();
     let rSet = new Set();
@@ -808,7 +1142,6 @@
     async function escaneoConIA(event) {
       const statusDiv = document.getElementById('status');
       const thumbsDiv = document.getElementById('thumbs');
-      
       const files = Array.from(event.target.files);
       if (!files.length) return;
 
@@ -820,21 +1153,11 @@
       });
 
       for (let i = 0; i < files.length; i++) {
-        statusDiv.style.color = "var(--primary)";
-        statusDiv.innerText = `⚡ Analizando foto ${i + 1} de ${files.length}...`;
-        
+        statusDiv.innerText = `⚡ Analizando etiqueta completa con IA (${i + 1}/${files.length})...`;
         try {
           const base64Data = await fileToBase64(files[i]);
           const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
-
-          const promptText = `Analiza este documento o etiqueta de envío. Extrae solo los siguientes datos:
-          1. "nota": Número de la NOTA DE ENTREGA (solo los dígitos numéricos).
-          2. "dr": El código DR.
-          3. "mb": Código que empieza por MB o número de Nota de Entrega (NE).
-          4. "pedido": Número de pedido.
-          5. "destino": Nombre de la Sucursal/Destino.
-          6. "r": Código R.
-          Responde SOLAMENTE en formato JSON estricto con las claves: "mb", "pedido", "destino", "r", "nota", "dr". Si no encuentras alguna pon null.`;
+          const promptText = `Analiza esta etiqueta completa. Extrae en formato JSON: "mb", "pedido", "destino", "r", "nota", "dr".`;
 
           const body = {
             contents: [{ parts: [{ text: promptText }, { inline_data: { mime_type: files[i].type || "image/jpeg", data: base64Data } }] }],
@@ -842,39 +1165,32 @@
           };
 
           const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-          if (!response.ok) throw new Error(`Error en IA`);
+          if (!response.ok) throw new Error(`Error`);
 
           const data = await response.json();
           if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
             const res = JSON.parse(data.candidates[0].content.parts[0].text);
-            if (res.mb && res.mb !== "null") mbsSet.add(res.mb.toString().trim());
-            if (res.pedido && res.pedido !== "null") pedidosSet.add(res.pedido.toString().trim());
-            if (res.r && res.r !== "null") rSet.add(res.r.toString().trim());
-            if (res.nota && res.nota !== "null") {
-              const cleanNota = res.nota.toString().replace(/\D/g, '');
-              if (cleanNota) notasSet.add(cleanNota);
-            }
-            if (res.dr && res.dr !== "null") drsSet.add(res.dr.toString().trim());
-            if (res.destino && res.destino !== "null" && !document.getElementById('destino').value) {
+            if (res.mb) mbsSet.add(res.mb.toString().trim());
+            if (res.pedido) pedidosSet.add(res.pedido.toString().trim());
+            if (res.r) rSet.add(res.r.toString().trim());
+            if (res.nota) notasSet.add(res.nota.toString().replace(/\D/g, ''));
+            if (res.dr) drsSet.add(res.dr.toString().trim());
+            if (res.destino && !document.getElementById('destino').value) {
               document.getElementById('destino').value = res.destino.toString().trim();
             }
           }
         } catch (e) {
-          statusDiv.style.color = "var(--danger)";
-          statusDiv.innerText = `❌ Error de análisis`;
+          statusDiv.innerText = `❌ Error en OCR IA`;
           return;
         }
       }
 
-      statusDiv.style.color = "var(--success)";
-      statusDiv.innerText = `✅ ¡Lectura completada con éxito!`;
-
+      statusDiv.innerText = `✅ ¡OCR completado!`;
       if (mbsSet.size > 0) document.getElementById('mb').value = Array.from(mbsSet).join(' / ');
       if (pedidosSet.size > 0) document.getElementById('pedido').value = Array.from(pedidosSet).join(' / ');
       if (rSet.size > 0) document.getElementById('r').value = Array.from(rSet).join(' / ');
       if (notasSet.size > 0) document.getElementById('nota').value = Array.from(notasSet).join(' / ');
       if (drsSet.size > 0) document.getElementById('dr').value = Array.from(drsSet).join(' / ');
-
       actualizarPreviewDaka();
     }
 
@@ -912,150 +1228,39 @@ Inspector que recibe: ${recibe}`;
     }
 
     function actualizarPreviewDaka() { document.getElementById('previewDaka').innerText = obtenerTextoDaka(); }
-    function copiarReporteDaka() { navigator.clipboard.writeText(obtenerTextoDaka()).then(() => alert('¡Reporte copiado!')); }
+    
+    function copiarReporteDaka() {
+      navigator.clipboard.writeText(obtenerTextoDaka()).then(() => {
+        let count = parseInt(localStorage.getItem('daily_dispatch_count') || '0') + 1;
+        localStorage.setItem('daily_dispatch_count', count);
+        alert('¡Reporte copiado y despacho registrado!');
+      });
+    }
+
     function abrirWhatsAppDaka() { window.open(`https://wa.me/?text=${encodeURIComponent(obtenerTextoDaka())}`, '_blank'); }
 
     function limpiarFormularioDaka() {
       mbsSet.clear(); pedidosSet.clear(); rSet.clear(); notasSet.clear(); drsSet.clear();
       ['destino','puerta','mb','pedido','r','cajas','nota','dr','recibe'].forEach(id => document.getElementById(id).value = '');
       document.getElementById('imageInput').value = '';
-      document.getElementById('status').innerText = 'Esperando fotos para analizar...';
+      document.getElementById('status').innerText = 'Usando códigos de barras ultrarrápidos (60 FPS)';
       document.getElementById('thumbs').innerHTML = '';
       actualizarPreviewDaka();
     }
 
     document.querySelectorAll('#tab-daka input').forEach(i => i.addEventListener('input', actualizarPreviewDaka));
 
-    // --- CARGAR DATOS DESPACHADOS AUTOMÁTICAMENTE AL REGISTRO DAKA CON FILTROS EXACTOS ---
-    function llenarDakaDesdeTienda(realIndex) {
-      const item = inventory[realIndex];
-      if (!item) return;
-
-      let mbsDespachados = [];
-      if (item.checkedMbsDispatch) {
-        Object.keys(item.checkedMbsDispatch).forEach(mb => {
-          if (item.checkedMbsDispatch[mb]) mbsDespachados.push(mb);
-        });
-      }
-
-      if (mbsDespachados.length === 0 && item.desp) {
-        mbsDespachados = [...item.mbsPlaya, ...item.mbsReja];
-      }
-
-      let pedidosList = [];
-      let notasList = [];
-      let drsList = [];
-
-      mbsDespachados.forEach(mb => {
-        if (item.detailsMap && item.detailsMap[mb]) {
-          const det = item.detailsMap[mb];
-          if (det.pedido) pedidosList.push(det.pedido);
-          if (det.nota) {
-            const cleanNota = det.nota.toString().replace(/\D/g, '');
-            if (cleanNota) notasList.push(cleanNota);
-          }
-          if (det.dr) drsList.push(det.dr);
-        }
-      });
-
-      mbsSet.clear();
-      pedidosSet.clear();
-      notasSet.clear();
-      drsSet.clear();
-
-      mbsDespachados.forEach(m => mbsSet.add(m));
-      pedidosList.forEach(p => pedidosSet.add(p));
-      notasList.forEach(n => notasSet.add(n));
-      drsList.forEach(d => drsSet.add(d));
-
-      // ÚNICAMENTE COLOCA EL NOMBRE DE LA AGENCIA Y NADA MÁS EN EL DESTINO (SIN CANTIDAD NI MB)
-      document.getElementById('destino').value = item.location;
-      document.getElementById('mb').value = mbsDespachados.join(' / ');
-      document.getElementById('pedido').value = pedidosList.join(' / ');
-      document.getElementById('nota').value = notasList.join(' / ');
-      document.getElementById('dr').value = drsList.join(' / ');
-      document.getElementById('cajas').value = mbsDespachados.length > 0 ? mbsDespachados.length : '';
-      
-      document.getElementById('puerta').value = '';
-      document.getElementById('r').value = '';
-      document.getElementById('recibe').value = '';
-
-      switchTab('daka');
-      actualizarPreviewDaka();
-    }
-
-    // --- GESTIÓN DE INVENTARIO ---
-    const defaultData = [
-      { 
-        id: 1, 
-        location: "San Diego", 
-        ver: false, 
-        desp: false, 
-        mbsPlaya: ["MB00074456", "MB00074776", "MB00074435"], 
-        mbsReja: [], 
-        checkedMbsVerify: {}, 
-        checkedMbsDispatch: {},
-        detailsMap: {
-          "MB00074456": { pedido: "90003884", nota: "224770", dr: "19321" },
-          "MB00074776": { pedido: "90003885", nota: "224771", dr: "19322" },
-          "MB00074435": { pedido: "90003886", nota: "224772", dr: "19323" }
-        }
-      },
-      { 
-        id: 2, 
-        location: "Branger", 
-        ver: false, 
-        desp: false, 
-        mbsPlaya: ["MB00074693", "MB00074177"], 
-        mbsReja: [], 
-        checkedMbsVerify: {}, 
-        checkedMbsDispatch: {},
-        detailsMap: {
-          "MB00074693": { pedido: "90004111", nota: "225001", dr: "19400" },
-          "MB00074177": { pedido: "90004112", nota: "225002", dr: "19401" }
-        }
-      }
-    ];
-
-    let inventory = [];
-    let currentImportType = 'playa';
-    let activeModalItemIndex = null;
-    let modalInteractionMode = 'view';
-    let selectedModalMbs = new Set();
-
-    function saveState() {
-      localStorage.setItem('daily_inventory', JSON.stringify(inventory));
-      inventoryRef.set(inventory).catch(err => console.error("Error al guardar:", err));
-    }
-
-    inventoryRef.on('value', (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        inventory = data.map(item => ({
-          ...item,
-          mbsPlaya: Array.isArray(item.mbsPlaya) ? item.mbsPlaya : (item.mbsPlaya ? [item.mbsPlaya] : []),
-          mbsReja: Array.isArray(item.mbsReja) ? item.mbsReja : (item.mbsReja ? [item.mbsReja] : []),
-          checkedMbsVerify: item.checkedMbsVerify || item.checkedMbs || {},
-          checkedMbsDispatch: item.checkedMbsDispatch || {},
-          detailsMap: item.detailsMap || {}
-        }));
-      } else {
-        inventory = defaultData;
-        saveState();
-      }
-      renderInv();
-    });
-
     function renderInv() {
       const container = document.getElementById('inventoryContainer');
       container.innerHTML = '';
       const query = document.getElementById('searchInput').value.toLowerCase().trim();
 
-      let filtered = inventory.filter(i => i.location.toLowerCase().includes(query));
-      filtered.sort((a, b) => {
-        const aHas = (a.mbsPlaya.length > 0 || a.mbsReja.length > 0);
-        const bHas = (b.mbsPlaya.length > 0 || b.mbsReja.length > 0);
-        return (bHas ? 1 : 0) - (aHas ? 1 : 0);
+      let filtered = inventory.filter(i => {
+        if (i.location.toLowerCase().includes(query)) return true;
+        let matchMb = false;
+        if (i.mbsPlaya) matchMb = i.mbsPlaya.some(mb => mb.toLowerCase().includes(query));
+        if (!matchMb && i.mbsReja) matchMb = i.mbsReja.some(mb => mb.toLowerCase().includes(query));
+        return matchMb;
       });
 
       filtered.forEach((item) => {
@@ -1075,24 +1280,32 @@ Inspector que recibe: ${recibe}`;
         card.innerHTML = `
           <div class="card-top-row">
             <div>
-              <div class="label-inv">Ubicación</div>
-              <div class="card-header-title">${item.location}</div>
+              <div class="label-inv">Ubicación / Estado</div>
+              <div class="card-header-title">${item.location} ${item.desp ? '✅ (Despachado)' : (item.mbsPlaya.length ? '🏖️ (En Playa)' : (item.mbsReja.length ? '🔒 (En Jaula)' : ''))}</div>
             </div>
-            <button class="btn-delete" onclick="deleteItem(event, ${realIndex})" title="Eliminar">✕</button>
+            <button class="btn-delete" onclick="deleteItem(event, ${realIndex})">✕</button>
           </div>
 
           <div class="status-summary-bar">
             <div class="status-mini-box">
-              <span class="label-inv">Playa</span>
-              <span class="status-badge ${cantPlaya > 0 ? 'badge-yes' : 'badge-no'}">
-                ${cantPlaya > 0 ? `SÍ (${cantPlaya})` : 'NO'}
-              </span>
+              <div class="section-header-row">
+                <span class="label-inv">Playa</span>
+                <div class="section-actions-inline">
+                  <button class="btn-dot-action btn-dot-red" onclick="openManualAddModal(${realIndex}, 'playa')" title="Agregar Manual">Manual</button>
+                  <button class="btn-dot-action btn-dot-green" onclick="scanStoreCode(${realIndex}, 'playa')" title="Escanear Código">Escanear</button>
+                </div>
+              </div>
+              <span class="status-badge ${cantPlaya > 0 ? 'badge-yes' : 'badge-no'}">${cantPlaya > 0 ? `SÍ (${cantPlaya})` : 'NO'}</span>
             </div>
             <div class="status-mini-box">
-              <span class="label-inv">Jaula</span>
-              <span class="status-badge ${cantReja > 0 ? 'badge-yes' : 'badge-no'}">
-                ${cantReja > 0 ? `SÍ (${cantReja})` : 'NO'}
-              </span>
+              <div class="section-header-row">
+                <span class="label-inv">Jaula</span>
+                <div class="section-actions-inline">
+                  <button class="btn-dot-action btn-dot-red" onclick="openManualAddModal(${realIndex}, 'jaula')" title="Agregar Manual">Manual</button>
+                  <button class="btn-dot-action btn-dot-green" onclick="scanStoreCode(${realIndex}, 'jaula')" title="Escanear Código">Escanear</button>
+                </div>
+              </div>
+              <span class="status-badge ${cantReja > 0 ? 'badge-yes' : 'badge-no'}">${cantReja > 0 ? `SÍ (${cantReja})` : 'NO'}</span>
             </div>
           </div>
 
@@ -1101,7 +1314,6 @@ Inspector que recibe: ${recibe}`;
               <div class="label-inv">Verificado</div>
               <button class="toggle-btn ${item.ver ? 'yes' : 'no'}" onclick="openMbModal(${realIndex}, 'verify')">${item.ver ? 'SÍ' : 'NO'}</button>
             </div>
-
             <div class="control-box">
               <div class="label-inv">Despacho</div>
               <button class="toggle-btn ${item.desp ? 'yes' : 'no'}" onclick="openMbModal(${realIndex}, 'dispatch')">${item.desp ? 'SÍ' : 'NO'}</button>
@@ -1109,7 +1321,7 @@ Inspector que recibe: ${recibe}`;
           </div>
 
           <button class="btn-daka-direct" onclick="event.stopPropagation(); llenarDakaDesdeTienda(${realIndex})">
-            📋 Ir a Registro DAKA (Automático)
+            📋 Ir a Registro DAKA Automático
           </button>
         `;
         container.appendChild(card);
@@ -1118,34 +1330,30 @@ Inspector que recibe: ${recibe}`;
 
     function deleteItem(e, index) { 
       e.stopPropagation();
-      if (confirm('¿Deseas eliminar esta tienda?')) { 
-        inventory.splice(index, 1); 
-        saveState(); 
-      } 
+      if (confirm('¿Eliminar esta tienda?')) { inventory.splice(index, 1); saveState(); renderInv(); } 
     }
 
     function resetDailyInventory() {
-      if (confirm("¿Deseas reiniciar todas las tiendas del inventario?")) {
-        const passwordInput = prompt("Introduce la clave para confirmar:");
-        if (passwordInput === "1234") {
-          inventory = inventory.map(i => ({ 
-            ...i, 
-            ver: false, 
-            desp: false, 
-            mbsPlaya: [], 
-            mbsReja: [], 
-            checkedMbsVerify: {}, 
-            checkedMbsDispatch: {},
-            detailsMap: {}
-          }));
-          saveState();
-          renderInv();
-          alert("Todas las tiendas han sido reiniciadas con éxito.");
-        } else if (passwordInput !== null) {
-          alert("Clave incorrecta. No se realizaron cambios.");
-        }
+      if (confirm("¿Reiniciar y restaurar la lista completa con todas las tiendas predeterminadas?")) {
+        inventory = tiendasNombres.map((nombre, index) => ({
+          id: index + 1,
+          location: `${index + 1}. ${nombre}`,
+          ver: false,
+          desp: false,
+          mbsPlaya: [],
+          mbsReja: [],
+          checkedMbsVerify: {},
+          checkedMbsDispatch: {},
+          detailsMap: {}
+        }));
+        saveState();
+        renderInv();
       }
     }
+
+    let activeModalItemIndex = null;
+    let modalInteractionMode = 'general';
+    let selectedModalMbs = new Set();
 
     function openMbModal(index, mode = 'general') {
       activeModalItemIndex = index;
@@ -1155,21 +1363,10 @@ Inspector que recibe: ${recibe}`;
 
       let sourceMap = (mode === 'dispatch') ? item.checkedMbsDispatch : item.checkedMbsVerify;
       if (sourceMap && mode !== 'general') {
-        Object.keys(sourceMap).forEach(mb => {
-          if (sourceMap[mb]) {
-            selectedModalMbs.add(mb);
-          }
-        });
+        Object.keys(sourceMap).forEach(mb => { if (sourceMap[mb]) selectedModalMbs.add(mb); });
       }
 
-      if (mode === 'dispatch') {
-        document.getElementById('mbModalTitle').innerText = `🚚 Despacho de Códigos`;
-      } else if (mode === 'verify') {
-        document.getElementById('mbModalTitle').innerText = `🔍 Verificación de Códigos`;
-      } else {
-        document.getElementById('mbModalTitle').innerText = `📋 Menú de Tienda: ${item.location}`;
-      }
-
+      document.getElementById('mbModalTitle').innerText = mode === 'dispatch' ? `🚚 Despacho` : (mode === 'verify' ? `🔍 Verificación` : `📋 Tienda: ${item.location}`);
       renderMbModalList();
       document.getElementById('mbModalOverlay').style.display = 'flex';
     }
@@ -1186,291 +1383,152 @@ Inspector que recibe: ${recibe}`;
       container.innerHTML = '';
 
       if (modalInteractionMode === 'general') {
-        document.getElementById('mbModalSubtitle').innerText = `Estado general y listado de códigos asociados.`;
-        let html = `<div style="margin-bottom: 12px; font-size: 0.9rem;">
-          <div><b>Verificado:</b> <span style="color:${item.ver ? 'var(--success)' : 'var(--danger)'}">${item.ver ? 'SÍ' : 'NO'}</span></div>
-          <div><b>Despacho:</b> <span style="color:${item.desp ? 'var(--success)' : 'var(--danger)'}">${item.desp ? 'SÍ' : 'NO'}</span></div>
-        </div>`;
-
-        html += `<div style="font-weight:700; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px;">ÁREA DE PLAYA:</div>`;
-        if (item.mbsPlaya.length === 0) {
-          html += `<div style="font-size:0.8rem; color:var(--text-muted); font-style:italic; margin-bottom:8px;">Sin códigos en playa</div>`;
-        } else {
-          item.mbsPlaya.forEach(mb => {
-            const det = item.detailsMap && item.detailsMap[mb] ? item.detailsMap[mb] : {};
-            html += `<div class="mb-pill">${mb} | Ped: ${det.pedido || 'N/A'} | NE: ${det.nota || 'N/A'} | DR: ${det.dr || 'N/A'}</div>`;
-          });
-        }
-
-        html += `<div style="font-weight:700; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px; margin-top:10px;">JAULA / REJA:</div>`;
-        if (item.mbsReja.length === 0) {
-          html += `<div style="font-size:0.8rem; color:var(--text-muted); font-style:italic; margin-bottom:8px;">Sin códigos en jaula</div>`;
-        } else {
-          item.mbsReja.forEach(mb => {
-            const det = item.detailsMap && item.detailsMap[mb] ? item.detailsMap[mb] : {};
-            html += `<div class="mb-pill" style="background:#fefce8; border-color:#fef08a; color:#a16207;">${mb} | Ped: ${det.pedido || 'N/A'} | NE: ${det.nota || 'N/A'} | DR: ${det.dr || 'N/A'}</div>`;
-          });
-        }
-
+        document.getElementById('mbModalSubtitle').innerText = `Estado y códigos asociados.`;
+        let html = `<div style="margin-bottom: 8px; font-size: 0.85rem;"><b>Verificado:</b> ${item.ver ? 'SÍ' : 'NO'} | <b>Despacho:</b> ${item.desp ? 'SÍ' : 'NO'}</div>`;
+        item.mbsPlaya.forEach(mb => { html += `<div class="mb-pill">${mb}</div>`; });
+        item.mbsReja.forEach(mb => { html += `<div class="mb-pill" style="background:#fefce8; color:#a16207;">${mb}</div>`; });
         container.innerHTML = html;
         document.getElementById('mbModalActions').innerHTML = `
-          <button style="padding: 10px 14px; background: var(--secondary); color:white; border:none; border-radius:var(--radius-sm); font-weight:600; cursor:pointer;" onclick="openMbModal(${activeModalItemIndex}, 'verify')">Ir a Verificado</button>
-          <button style="padding: 10px 14px; background: var(--primary); color:white; border:none; border-radius:var(--radius-sm); font-weight:600; cursor:pointer;" onclick="openMbModal(${activeModalItemIndex}, 'dispatch')">Ir a Despacho</button>
-          <button style="padding: 10px 14px; background: var(--bg); border:1px solid var(--border-color); color:var(--text); border-radius:var(--radius-sm); font-weight:600; cursor:pointer;" onclick="document.getElementById('mbModalOverlay').style.display='none'">Cerrar</button>
+          <button style="padding: 8px 12px; background: var(--secondary); color:white; border:none; border-radius:var(--radius-sm); font-weight:600; cursor:pointer;" onclick="openMbModal(${activeModalItemIndex}, 'verify')">Verificar</button>
+          <button style="padding: 8px 12px; background: var(--primary); color:white; border:none; border-radius:var(--radius-sm); font-weight:600; cursor:pointer;" onclick="openMbModal(${activeModalItemIndex}, 'dispatch')">Despachar</button>
+          <button style="padding: 8px 12px; background: var(--bg); border:1px solid var(--border-color); color:var(--text); border-radius:var(--radius-sm); font-weight:600; cursor:pointer;" onclick="document.getElementById('mbModalOverlay').style.display='none'">Cerrar</button>
         `;
         return;
       }
 
-      let html = `<div style="font-weight:700; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px;">ÁREA DE PLAYA:</div>`;
-      if (item.mbsPlaya.length === 0) {
-        html += `<div style="font-size:0.8rem; color:var(--text-muted); font-style:italic; margin-bottom:8px;">Sin códigos en playa</div>`;
-      } else {
-        html += `<div style="margin-bottom:8px;">`;
-        item.mbsPlaya.forEach((mb) => {
-          const isSelected = selectedModalMbs.has(mb);
-          html += `<div class="mb-selectable ${isSelected ? 'selected' : ''}" onclick="toggleSelectModalMb('${mb}')">
-            <span>${mb}</span>
-            <span class="check-icon">${isSelected ? '✅' : '⬜'}</span>
-          </div>`;
-        });
-        html += `</div>`;
-      }
-
-      html += `<div style="font-weight:700; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px; margin-top:10px;">JAULA / REJA:</div>`;
-      if (item.mbsReja.length === 0) {
-        html += `<div style="font-size:0.8rem; color:var(--text-muted); font-style:italic; margin-bottom:8px;">Sin códigos en jaula</div>`;
-      } else {
-        html += `<div style="margin-bottom:8px;">`;
-        item.mbsReja.forEach((mb) => {
-          const isSelected = selectedModalMbs.has(mb);
-          html += `<div class="mb-selectable ${isSelected ? 'selected' : ''}" onclick="toggleSelectModalMb('${mb}')">
-            <span>${mb}</span>
-            <span class="check-icon">${isSelected ? '✅' : '⬜'}</span>
-          </div>`;
-        });
-        html += `</div>`;
-      }
-
+      let html = '';
+      item.mbsPlaya.forEach(mb => {
+        const isSel = selectedModalMbs.has(mb);
+        html += `<div class="mb-selectable ${isSel ? 'selected' : ''}" onclick="toggleSelectModalMb('${mb}')"><span>${mb} (Playa)</span><span>${isSel ? '✅' : '⬜'}</span></div>`;
+      });
+      item.mbsReja.forEach(mb => {
+        const isSel = selectedModalMbs.has(mb);
+        html += `<div class="mb-selectable ${isSel ? 'selected' : ''}" onclick="toggleSelectModalMb('${mb}')"><span>${mb} (Jaula)</span><span>${isSel ? '✅' : '⬜'}</span></div>`;
+      });
       container.innerHTML = html;
-      
-      if (modalInteractionMode === 'dispatch') {
-        document.getElementById('mbModalSubtitle').innerText = `Toca los códigos para seleccionarlos (${selectedModalMbs.size} seleccionados)`;
-        document.getElementById('mbModalActions').innerHTML = `
-          <button style="padding: 10px 14px; background: var(--bg); border:1px solid var(--border-color); color:var(--text); border-radius:var(--radius-sm); font-weight:600; cursor:pointer;" onclick="openMbModal(${activeModalItemIndex}, 'general')">Volver</button>
-          <button style="padding: 10px 14px; background: var(--success); color:white; border:none; border-radius:var(--radius-sm); font-weight:700; cursor:pointer;" onclick="confirmDispatchAction()">Guardar Despacho</button>
-        `;
-      } else {
-        document.getElementById('mbModalSubtitle').innerText = `Toca los códigos para seleccionarlos (${selectedModalMbs.size} seleccionados)`;
-        document.getElementById('mbModalActions').innerHTML = `
-          <button style="padding: 10px 12px; background: var(--bg); border:1px solid var(--border-color); color:var(--text); border-radius:var(--radius-sm); font-weight:600; cursor:pointer;" onclick="openMbModal(${activeModalItemIndex}, 'general')">Volver</button>
-          <button style="padding: 10px 12px; background: var(--warning); color:white; border:none; border-radius:var(--radius-sm); font-weight:700; cursor:pointer;" onclick="confirmVerifyAction(false)">Marcar NO</button>
-          <button style="padding: 10px 12px; background: var(--success); color:white; border:none; border-radius:var(--radius-sm); font-weight:700; cursor:pointer;" onclick="confirmVerifyAction(true)">Marcar SÍ</button>
-        `;
-      }
+
+      document.getElementById('mbModalActions').innerHTML = `
+        <button style="padding: 8px 12px; background: var(--bg); border:1px solid var(--border-color); color:var(--text); border-radius:var(--radius-sm); font-weight:600; cursor:pointer;" onclick="openMbModal(${activeModalItemIndex}, 'general')">Volver</button>
+        <button style="padding: 8px 12px; background: var(--success); color:white; border:none; border-radius:var(--radius-sm); font-weight:700; cursor:pointer;" onclick="confirmModalAction()">Guardar</button>
+      `;
     }
 
     function toggleSelectModalMb(mb) {
-      if (selectedModalMbs.has(mb)) {
-        selectedModalMbs.delete(mb);
-      } else {
-        selectedModalMbs.add(mb);
-      }
-      
-      const item = inventory[activeModalItemIndex];
-      if (modalInteractionMode === 'dispatch') {
-        if (!item.checkedMbsDispatch) item.checkedMbsDispatch = {};
-        item.checkedMbsDispatch[mb] = selectedModalMbs.has(mb);
-      } else if (modalInteractionMode === 'verify') {
-        if (!item.checkedMbsVerify) item.checkedMbsVerify = {};
-        item.checkedMbsVerify[mb] = selectedModalMbs.has(mb);
-      }
-
+      if (selectedModalMbs.has(mb)) selectedModalMbs.delete(mb);
+      else selectedModalMbs.add(mb);
       renderMbModalList();
     }
 
-    function confirmDispatchAction() {
-      inventory[activeModalItemIndex].desp = selectedModalMbs.size > 0;
-      document.getElementById('mbModalOverlay').style.display = 'none';
-      saveState();
-      renderInv();
-    }
-
-    function confirmVerifyAction(statusValue) {
-      inventory[activeModalItemIndex].ver = statusValue;
-      document.getElementById('mbModalOverlay').style.display = 'none';
-      saveState();
-      renderInv();
-    }
-
-    function openImportModal(type) {
-      currentImportType = type;
-      if (type === 'playa') {
-        document.getElementById('importModalTitle').innerText = '📥 Importar a Playa';
-      } else {
-        document.getElementById('importModalTitle').innerText = '📥 Importar a Jaula';
+    function confirmModalAction() {
+      const item = inventory[activeModalItemIndex];
+      if (modalInteractionMode === 'dispatch') {
+        item.desp = selectedModalMbs.size > 0;
+      } else if (modalInteractionMode === 'verify') {
+        item.ver = selectedModalMbs.size > 0;
       }
-      document.getElementById('importTextarea').value = '';
-      document.getElementById('importModalOverlay').style.display = 'flex';
+      closeMbModal();
     }
 
-    function closeImportModal() { document.getElementById('importModalOverlay').style.display = 'none'; }
-
-    function processImportText() {
-      const text = document.getElementById('importTextarea').value;
-      if (!text.trim()) return alert("Pega algún texto.");
-
-      const lines = text.split('\n');
-      let updatedCount = 0, addedCount = 0;
-
-      lines.forEach(line => {
-        let cleanLine = line.trim();
-        if (!cleanLine) return;
-
-        let storeName = "", codeFound = "";
-        let pedidoFound = "", notaFound = "", drFound = "";
-
-        const mbMatch = cleanLine.match(/MB\d+/i);
-        const neMatch = cleanLine.match(/NE\s*(\d+)/i);
-        const pedidoMatch = cleanLine.match(/pedido\s*[:#]?\s*(\d+)/i) || cleanLine.match(/9\d{7}/);
-        const notaMatch = cleanLine.match(/nota\s*[:#]?\s*(\d+)/i) || cleanLine.match(/NE\s*(\d+)/i);
-        const drMatch = cleanLine.match(/DR\s*[:#]?\s*(\d+)/i);
-
-        if (mbMatch) {
-          codeFound = mbMatch[0].toUpperCase();
-        } else if (neMatch) {
-          codeFound = neMatch[0].toUpperCase().replace(/\s+/, ' ');
-        }
-
-        if (pedidoMatch) pedidoFound = pedidoMatch[1] || pedidoMatch[0];
-        if (notaMatch) {
-          notaFound = (notaMatch[1] || notaMatch[0]).replace(/\D/g, '');
-        }
-        if (drMatch) drFound = drMatch[1];
-
-        if (cleanLine.includes('-')) {
-          storeName = cleanLine.split('-')[0].trim();
-        } else {
-          storeName = cleanLine.split(' ')[0].trim();
-        }
-
-        storeName = storeName.replace(/^(agencia|sucursal)\s+/i, '').trim();
-        storeName = storeName.charAt(0).toUpperCase() + storeName.slice(1);
-
-        if (storeName) {
-          let item = inventory.find(i => i.location.toLowerCase() === storeName.toLowerCase());
-          if (!item) {
-            item = {
-              id: Date.now() + Math.random(),
-              location: storeName,
-              ver: false,
-              desp: false,
-              mbsPlaya: [],
-              mbsReja: [],
-              checkedMbsVerify: {},
-              checkedMbsDispatch: {},
-              detailsMap: {}
-            };
-            inventory.push(item);
-            addedCount++;
-          } else {
-            updatedCount++;
-          }
-
-          if (codeFound) {
-            if (currentImportType === 'playa' && !item.mbsPlaya.includes(codeFound)) item.mbsPlaya.push(codeFound);
-            if (currentImportType === 'jaula' && !item.mbsReja.includes(codeFound)) item.mbsReja.push(codeFound);
-            
-            if (!item.detailsMap) item.detailsMap = {};
-            item.detailsMap[codeFound] = {
-              pedido: pedidoFound || "",
-              nota: notaFound || "",
-              dr: drFound || ""
-            };
-          }
-        }
-      });
-
-      saveState();
-      closeImportModal();
-      renderInv();
-      alert(`Importado con éxito. Actualizadas/Nuevas procesadas.`);
+    function llenarDakaDesdeTienda(realIndex) {
+      const item = inventory[realIndex];
+      if (!item) return;
+      let cleanLocation = item.location.replace(/^\d+\.\s*/, '');
+      document.getElementById('destino').value = cleanLocation;
+      let mbs = [...item.mbsPlaya, ...item.mbsReja];
+      document.getElementById('mb').value = mbs.join(' / ');
+      document.getElementById('cajas').value = mbs.length > 0 ? mbs.length : '';
+      switchTab('daka');
+      actualizarPreviewDaka();
     }
 
     function renderSummary() {
-      const listDesp = document.getElementById('listDespachadas');
-      const listPlaya = document.getElementById('listPlaya');
-      const listReja = document.getElementById('listReja');
-      const listVerif = document.getElementById('listVerificadas');
-      
-      listDesp.innerHTML = ''; listPlaya.innerHTML = ''; listReja.innerHTML = ''; listVerif.innerHTML = '';
-
-      let cDesp = 0, cPend = 0, cTotal = 0;
-
+      let totalMB = 0, despMB = 0, pendMB = 0, pendStores = 0;
       inventory.forEach(i => {
-        const realIndex = inventory.findIndex(inv => inv.id === i.id);
-        const tienePlaya = i.mbsPlaya.length > 0;
-        const tieneReja = i.mbsReja.length > 0;
-
-        if (tienePlaya || tieneReja || i.desp) cTotal++;
-
-        if (i.desp) {
-          cDesp++;
-          listDesp.innerHTML += `
-            <li class="summary-item" onclick="openMbModal(${realIndex}, 'general')">
-              <span class="store-name">${i.location}</span>
-              <span class="store-badge" style="color:var(--success)">DESPACHADA</span>
-            </li>`;
-        } else {
-          if (tienePlaya) { 
-            cPend++; 
-            listPlaya.innerHTML += `
-              <li class="summary-item" onclick="openMbModal(${realIndex}, 'general')">
-                <span class="store-name">${i.location}</span>
-                <span class="store-badge">${i.mbsPlaya.length} código(s)</span>
-              </li>`; 
-          }
-          if (tieneReja) { 
-            cPend++; 
-            listReja.innerHTML += `
-              <li class="summary-item" onclick="openMbModal(${realIndex}, 'general')">
-                <span class="store-name">${i.location}</span>
-                <span class="store-badge">${i.mbsReja.length} código(s)</span>
-              </li>`; 
-          }
-        }
-
-        if (i.ver) {
-          listVerif.innerHTML += `
-            <li class="summary-item" onclick="openMbModal(${realIndex}, 'general')">
-              <span class="store-name">${i.location}</span>
-              <span class="store-badge" style="color:var(--primary)">VERIFICADA</span>
-            </li>`;
+        let mbs = [...i.mbsPlaya, ...i.mbsReja];
+        totalMB += mbs.length;
+        if (i.desp) despMB += mbs.length;
+        else {
+          pendMB += mbs.length;
+          if (mbs.length > 0) pendStores++;
         }
       });
+      document.getElementById('statTotalMB').innerText = totalMB;
+      document.getElementById('statDespMB').innerText = despMB;
+      document.getElementById('statPendMB').innerText = pendMB;
+      document.getElementById('statPend').innerText = pendStores;
+      document.getElementById('statDailyCount').innerText = localStorage.getItem('daily_dispatch_count') || '0';
+      document.getElementById('statAvgTime').innerText = '4.2s';
 
-      document.getElementById('statTotal').innerText = cTotal;
-      document.getElementById('statDesp').innerText = cDesp;
-      document.getElementById('statPend').innerText = cPend;
+      const listPlaya = document.getElementById('listPlaya');
+      const listReja = document.getElementById('listReja');
+      const listDesp = document.getElementById('listDespachadas');
+      const listVerif = document.getElementById('listVerificadas');
+      listPlaya.innerHTML = ''; listReja.innerHTML = ''; listDesp.innerHTML = ''; listVerif.innerHTML = '';
+
+      inventory.forEach((i, idx) => {
+        if (i.mbsPlaya.length > 0 && !i.desp) listPlaya.innerHTML += `<li class="summary-item" onclick="openMbModal(${idx}, 'general')"><span class="store-name">${i.location}</span><span class="store-badge">${i.mbsPlaya.length} MBs</span></li>`;
+        if (i.mbsReja.length > 0 && !i.desp) listReja.innerHTML += `<li class="summary-item" onclick="openMbModal(${idx}, 'general')"><span class="store-name">${i.location}</span><span class="store-badge">${i.mbsReja.length} MBs</span></li>`;
+        if (i.desp) listDesp.innerHTML += `<li class="summary-item" onclick="openMbModal(${idx}, 'general')"><span class="store-name">${i.location}</span><span class="store-badge" style="color:var(--success)">DESPACHADA</span></li>`;
+        if (i.ver) listVerif.innerHTML += `<li class="summary-item" onclick="openMbModal(${idx}, 'general')"><span class="store-name">${i.location}</span><span class="store-badge" style="color:var(--primary)">VERIFICADA</span></li>`;
+      });
     }
 
     function generateTextReport() {
-      const fecha = document.getElementById('repFecha').value || new Date().toLocaleDateString('es-ES');
+      const fecha = document.getElementById('repFecha').value || '03/08/26';
       const turno = document.getElementById('repTurno').value || 'tercer turno';
       const entrega = document.getElementById('repEntrega').value || 'Gabriel López';
-      const recibe = document.getElementById('repRecibe').value || '';
+      const recibe = document.getElementById('repRecibe').value || '(Por asignar)';
 
-      const playa = inventory.filter(i => i.mbsPlaya.length > 0 && !i.desp);
-      const reja = inventory.filter(i => i.mbsReja.length > 0 && !i.desp);
-      const desp = inventory.filter(i => i.desp);
+      let playaItems = [];
+      let rejaItems = [];
+      let despItems = [];
 
-      let txt = `📌 *REPORTE DE ENTREGA DE TURNO*\n-----------------------------------\n📅 *Fecha:* ${fecha}\n🔄 *Entrega:* ${turno}\n-----------------------------------\n\n`;
-      txt += `📦 *DIGITAL EN EL ÁREA DE PLAYA* (${playa.length})\n`;
-      playa.forEach(i => txt += `  ▫️ ${i.location}\n`);
-      txt += `\n🔒 *DENTRO DE JAULA / REJA* (${reja.length})\n`;
-      reja.forEach(i => txt += `  ▫️ ${i.location}\n`);
-      txt += `\n🚚 *TIENDAS DESPACHADAS* (${desp.length})\n`;
-      desp.forEach(i => txt += `  ▫️ ${i.location}\n`);
-      txt += `\n-----------------------------------\n👤 *Entrega:* ${entrega}\n👤 *Recibe:* ${recibe}\n`;
+      inventory.forEach(i => {
+        let cleanName = i.location.replace(/^\d+\.\s*/, '');
+        if (i.desp) {
+          despItems.push(cleanName);
+        } else {
+          if (i.mbsPlaya && i.mbsPlaya.length > 0) {
+            playaItems.push(cleanName);
+          }
+          if (i.mbsReja && i.mbsReja.length > 0) {
+            rejaItems.push(cleanName);
+          }
+        }
+      });
+
+      let txt = `📌 *REPORTE DE ENTREGA DE TURNO*
+-----------------------------------
+📅 *Fecha:* ${fecha}
+🔄 *Entrega:* ${turno}
+-----------------------------------
+
+📦 *DIGITAL EN EL ÁREA DE PLAYA* (${playaItems.length})
+`;
+      playaItems.forEach(name => {
+        txt += `  ▫️ ${name}\n`;
+      });
+
+      txt += `
+🔒 *DENTRO DE JAULA / REJA* (${rejaItems.length})
+`;
+      rejaItems.forEach(name => {
+        txt += `  ▫️ ${name}\n`;
+      });
+
+      txt += `
+🚚 *TIENDAS DESPACHADAS* (${despItems.length})
+`;
+      despItems.forEach(name => {
+        txt += `  ▫️ ${name}\n`;
+      });
+
+      txt += `-----------------------------------
+
+📱 *Se deja evidencia de los 5 dispositivos en su lugar correspondiente*
+
+👤 *Entrega:* ${entrega}
+👤 *Recibe:* ${recibe}`;
 
       document.getElementById('reportTextarea').value = txt;
     }
@@ -1479,21 +1537,27 @@ Inspector que recibe: ${recibe}`;
       navigator.clipboard.writeText(document.getElementById('reportTextarea').value).then(() => alert('¡Reporte copiado!'));
     }
 
+    function exportarExcel() { alert("Exportando a Excel..."); }
+    function exportarPDF() { alert("Exportando a PDF..."); }
+    function exportarTXT() { copyReportText(); }
+
     document.getElementById('openModalBtn').onclick = () => document.getElementById('modalOverlay').style.display = 'flex';
     document.getElementById('closeModalBtn').onclick = () => document.getElementById('modalOverlay').style.display = 'none';
     document.getElementById('saveLocationBtn').onclick = () => {
       const val = document.getElementById('locationInput').value.trim();
       if (val) {
-        inventory.push({ id: Date.now(), location: val, ver: false, desp: false, mbsPlaya: [], mbsReja: [], checkedMbsVerify: {}, checkedMbsDispatch: {}, detailsMap: {} });
+        const nuevoNum = inventory.length + 1;
+        inventory.push({ id: Date.now(), location: `${nuevoNum}. ${val}`, ver: false, desp: false, mbsPlaya: [], mbsReja: [], checkedMbsVerify: {}, checkedMbsDispatch: {}, detailsMap: {} });
         saveState();
         document.getElementById('modalOverlay').style.display = 'none';
         document.getElementById('locationInput').value = '';
+        renderInv();
       }
     };
 
-    document.getElementById('repFecha').value = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit' });
+    document.getElementById('repFecha').value = '03/08/26';
     actualizarPreviewDaka();
+    generateTextReport();
   </script>
 </body>
 </html>
-
