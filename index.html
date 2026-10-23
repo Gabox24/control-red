@@ -222,6 +222,15 @@
   .filters { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .filters .field { margin-bottom: 10px; }
   .filter-clear { min-height: 44px; margin-bottom: 14px; }
+  .pin { position: fixed; inset: 0; z-index: 100; background: rgba(14,21,48,.55); display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .pin-box { width: 100%; max-width: 340px; background: #fff; border-radius: 24px; padding: 22px; box-shadow: 0 24px 60px -12px rgba(14,21,48,.5); }
+  .pin-box h3 { margin: 0 0 4px; font-size: 1.25rem; font-weight: 800; }
+  .pin-box p { margin: 0 0 14px; color: var(--muted); font-size: .92rem; }
+  .pin-box input { width: 100%; height: 56px; padding: 0 16px; font-size: 1.4rem; font-weight: 800; letter-spacing: .3em; text-align: center; border: 2px solid transparent; border-radius: 16px; background: var(--field); }
+  .pin-box input:focus { outline: none; background: #fff; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(47,91,234,.16); }
+  .pin-box .pin-err { color: var(--danger); font-weight: 700; margin: 8px 0 0; }
+  .pin-act { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+  .pin-act .btn { min-height: 50px; }
 </style>
 </head>
 <body>
@@ -314,6 +323,16 @@
   <button type="button" data-go="print" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V3h10v6"/><rect x="4" y="9" width="16" height="8" rx="2"/><path d="M7 14h10v7H7z"/></svg><span>Imprimir</span><small class="chip"></small></button>
   <button type="button" data-go="hist" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Registro</span><small class="chip" id="nb-hist"></small></button>
 </nav>
+
+<div class="pin" id="pin" hidden role="dialog" aria-modal="true" aria-labelledby="pin-t">
+  <div class="pin-box">
+    <h3 id="pin-t">No tienes acceso</h3>
+    <p>Coloca la clave para continuar.</p>
+    <input id="pin-in" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" autocomplete="off" placeholder="····">
+    <p class="pin-err" id="pin-err" hidden>Clave incorrecta</p>
+    <div class="pin-act"><button class="btn" type="button" id="pin-no">Cancelar</button><button class="btn primary" type="button" id="pin-ok">Entrar</button></div>
+  </div>
+</div>
 
 <div class="toast" id="toast" role="status" aria-live="polite" hidden><span id="toast-msg"></span><button type="button" id="toast-undo" hidden>Deshacer</button></div>
 
@@ -735,7 +754,31 @@
   suggest("f-suc", SUC_LIST, "f-puerta");
   suggest("f-puerta", PUERTA_LIST, "f-digital");
 
-  applyKb(); refreshChrome(); sync();
+  /* ---------- Acceso con clave (se pierde al actualizar la página) ---------- */
+  var PIN = "2020", unlocked = false, afterPin = null;
+  function askPin(after) {
+    afterPin = after; $("pin-in").value = ""; $("pin-err").hidden = true; $("pin").hidden = false;
+    setTimeout(function () { $("pin-in").focus(); }, 30);
+  }
+  function closePin() { $("pin").hidden = true; afterPin = null; }
+  function tryPin() {
+    if ($("pin-in").value === PIN) { unlocked = true; var f = afterPin; closePin(); if (f) f(); }
+    else { $("pin-err").hidden = false; $("pin-in").value = ""; $("pin-in").focus(); }
+  }
+  $("pin-ok").addEventListener("click", tryPin);
+  $("pin-no").addEventListener("click", closePin);
+  $("pin-in").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); tryPin(); } });
+  document.addEventListener("click", function (e) {
+    if (unlocked) return;
+    var nav = e.target.closest("[data-go]"), act = e.target.closest("#hd-edit, #hd-del");
+    if (nav && nav.getAttribute("data-go") !== "hist") {
+      e.stopPropagation(); e.preventDefault(); var tab = nav.getAttribute("data-go"); askPin(function () { go(tab); });
+    } else if (act) {
+      e.stopPropagation(); e.preventDefault(); askPin(function () { act.click(); });
+    }
+  }, true);
+
+  applyKb(); refreshChrome(); sync(); go("hist");
 })();
 </script>
 </body>
