@@ -1,4 +1,4 @@
-!doctype html>
+<!doctype html>
 <html lang="es">
 <head>
 <meta charset="utf-8">
@@ -231,6 +231,8 @@
   .pin-box .pin-err { color: var(--danger); font-weight: 700; margin: 8px 0 0; }
   .pin-act { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
   .pin-act .btn { min-height: 50px; }
+  .scan-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .scan-btn { min-height: 52px; font-size: .95rem; }
 </style>
 </head>
 <body>
@@ -291,8 +293,8 @@
   <section class="tab" id="tab-hist">
     <div id="hist-list">
       <h2>Registro</h2>
-      <p class="sub">Cédulas guardadas por sucursal y fecha</p>
-      <label class="field"><span>Buscar</span><input id="hist-q" type="search" placeholder="Busca por sucursal" autocomplete="off" spellcheck="false"></label>
+      <p class="sub">Cédulas guardadas por sucursal y fecha. Se sincronizan solas entre todos tus dispositivos.</p>
+      <label class="field"><span>Buscar</span><input id="hist-q" type="search" placeholder="Sucursal o fecha (23/10/2026)" autocomplete="off" spellcheck="false"></label>
       <div class="filters">
         <label class="field"><span>Desde</span><input id="hist-from" type="date"></label>
         <label class="field"><span>Hasta</span><input id="hist-to" type="date"></label>
@@ -491,6 +493,73 @@
     render();
   }
   makeList("main"); makeList("pairs");
+
+  /* ---------- Escanear etiqueta (Carga): llena MB, P y R ---------- */
+  (function () {
+    var card = $("entry-main"), ins = card.querySelectorAll("input[data-i]");
+    var row = document.createElement("div"); row.className = "scan-row";
+    var btnCam = document.createElement("button"), btnUp = document.createElement("button");
+    var fileCam = document.createElement("input"), fileUp = document.createElement("input");
+    btnCam.type = btnUp.type = "button"; btnCam.className = btnUp.className = "btn scan-btn";
+    btnCam.textContent = "📷 Usar cámara"; btnUp.textContent = "🖼️ Subir imagen";
+    fileCam.type = fileUp.type = "file"; fileCam.accept = fileUp.accept = "image/*"; fileCam.hidden = fileUp.hidden = true;
+    fileCam.setAttribute("capture", "environment");
+    row.appendChild(btnCam); row.appendChild(btnUp); row.appendChild(fileCam); row.appendChild(fileUp);
+    card.insertBefore(row, card.querySelector(".grid"));
+    var btn = { set disabled(v) { btnCam.disabled = btnUp.disabled = v; }, set textContent(t) { btnCam.textContent = t || "📷 Usar cámara"; btnUp.textContent = t ? "Espera…" : "🖼️ Subir imagen"; } };
+    var libP = null;
+    function loadLib() {
+      if (window.Tesseract) return Promise.resolve();
+      return libP || (libP = new Promise(function (ok, bad) {
+        var sc = document.createElement("script");
+        sc.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
+        sc.onload = ok; sc.onerror = function () { libP = null; bad(new Error("sin conexión")); };
+        document.head.appendChild(sc);
+      }));
+    }
+    function prep(f, flt) {
+      return new Promise(function (ok, bad) {
+        var img = new Image(), url = URL.createObjectURL(f);
+        img.onload = function () {
+          var k = Math.min(1, 1800 / Math.max(img.width, img.height)), c = document.createElement("canvas");
+          c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+          var x = c.getContext("2d"); x.filter = flt || "grayscale(1) contrast(1.4)"; x.drawImage(img, 0, 0, c.width, c.height);
+          URL.revokeObjectURL(url); ok(c);
+        };
+        img.onerror = function () { bad(new Error("imagen")); }; img.src = url;
+      });
+    }
+    function parse(t) {
+      var D = "[0-9OoIl|SB]{7,10}";
+      var mb = (t.match(new RegExp("M\\s*[B8]\\s*(" + D + ")", "i")) || t.match(/\b([0O]{2}[0-9OIl]{6,8})\b/) || [])[1];
+      var pp = (t.match(/\bP\s*[:;]\s*(\d{6,9})/i) || t.match(/\b(9\d{7})\b/) || [])[1];
+      var rr = (t.match(/\bR\s*[.,]?\s*[:;]\s*(\d{4,6})/i) || [])[1];
+      return [mb ? "MB" + mb.replace(/[Oo]/g, "0").replace(/[Il|]/g, "1").replace(/S/g, "5").replace(/B/g, "8") : "", pp || "", rr || ""];
+    }
+    btnCam.addEventListener("click", function () { if (!ins[0].disabled) fileCam.click(); });
+    btnUp.addEventListener("click", function () { if (!ins[0].disabled) fileUp.click(); });
+    [fileCam, fileUp].forEach(function (file) { file.addEventListener("change", function () {
+      var f = file.files[0]; file.value = ""; if (!f) return;
+      btn.disabled = true; btn.textContent = "Leyendo etiqueta…";
+      var lg = { logger: function (m) { if (m.status === "recognizing text") btn.textContent = "Leyendo… " + Math.round(m.progress * 100) + "%"; } };
+      var v1;
+      loadLib().then(function () { return prep(f); }).then(function (c) {
+        return Tesseract.recognize(c, "eng", lg);
+      }).then(function (r) {
+        v1 = parse(r.data.text);
+        if (v1[0]) return v1;
+        return prep(f, "grayscale(1) contrast(2.2) brightness(1.15)").then(function (c2) { return Tesseract.recognize(c2, "eng", lg); }).then(function (r2) {
+          var v2 = parse(r2.data.text); return v1.map(function (x, i) { return x || v2[i]; });
+        });
+      }).then(function (v) {
+        var n = 0;
+        v.forEach(function (x, i) { if (x) { ins[i].value = x; n++; } });
+        toast(n === 3 ? "Etiqueta leída: revisa y completa el DR" : n ? "Solo se leyó " + n + " de 3 datos, revisa" : "No se pudo leer, intenta con otra foto");
+        (n ? ins[3] : ins[0]).focus();
+      }).catch(function () { toast("No se pudo escanear (revisa la conexión)"); })
+        .then(function () { btn.disabled = false; btn.textContent = ""; });
+    }); });
+  })();
 
   /* ---------- Hoja A4 ---------- */
   var printData = null;
